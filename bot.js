@@ -2,15 +2,14 @@
 var irc = require('irc');
 
 var ircServer = 'irc.mozilla.org',
-    nick = '_TestDayBot3',
-    options = {channels: ['#tday'],autoRejoin: true,},
+    nick = '_TestDayBot',
+    options = {channels: ['#testday'],autoRejoin: true,},
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {};
 
 client.addListener('join', function(channel, who){
   if (who !== nick){
     var lastMessageTime = Date.now() - lastQuit[who];
-    console.log(lastQuit.toString() + " time: " + lastMessageTime);
     
     if (lastQuit[who] && lastMessageTime < 1800000){
       
