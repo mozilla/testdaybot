@@ -1,0 +1,8 @@
+{
+    "name": "testdaybot"
+  , "version": "0.0.1"
+  , "private": true
+  , "dependencies": {
+      "irc" : "0.3.3"
+    }
+}
