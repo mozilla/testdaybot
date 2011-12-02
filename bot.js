@@ -2,10 +2,11 @@
 var irc = require('irc');
 
 var ircServer = 'irc.mozilla.org',
-    nick = '_TestDayBot',
-    options = {channels: ['#testday'],autoRejoin: true,},
+    nick = '_TestDayBot2',
+    options = {channels: ['#tday'],autoRejoin: true,},
     client = new irc.Client(ircServer, nick, options),
-    lastQuit = {};
+    lastQuit = {},
+    etherpad = 'https://etherpad.mozilla.org/testday-111202-webapps';
 
 client.addListener('join', function(channel, who){
   if (who !== nick){
@@ -15,8 +16,18 @@ client.addListener('join', function(channel, who){
       
     } else {
       console.log("Greeted " + who);
-      client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at https://etherpad.mozilla.org/testday-111202-webapps");
+      client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
     }
+  }
+});
+
+client.addListener('message', function(from, to, message){
+  if (message.search('[!:]bug') >= 0){
+    client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
+  }
+
+  if (message.search('[!:]etherpad') >= 0){
+    client.say(to, "Today's etherpad is " + etherpad);
   }
 });
 
