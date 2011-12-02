@@ -11,9 +11,9 @@ var ircServer = 'irc.mozilla.org',
 client.addListener('join', function(channel, who){
   if (who !== nick){
     var lastMessageTime = Date.now() - lastQuit[who];
-    
+
     if (lastQuit[who] && lastMessageTime < 1800000){
-      
+
     } else {
       console.log("Greeted " + who);
       client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
@@ -28,6 +28,12 @@ client.addListener('message', function(from, to, message){
 
   if (message.search('[!:]etherpad') >= 0){
     client.say(to, "Today's etherpad is " + etherpad);
+  }
+  if (message.search('[!:]sumo') >= 0){
+    client.say(to, "SUMO is short for http://support.mozilla.com, the official, community-powered support website for Mozilla Firefox");
+  }
+  if (message.search('[!:]qmo') >= 0){
+    client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
 });
 
