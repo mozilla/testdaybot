@@ -3,7 +3,10 @@ var irc = require('irc');
 
 var ircServer = 'irc.mozilla.org',
     nick = '_TestDayBot',
-    options = {channels: ['#testday'],autoRejoin: true,},
+    options = {
+      channels: ['#testday'],
+      autoRejoin: true,
+    },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
     etherpad = 'https://etherpad.mozilla.org/testday-111202-webapps';
