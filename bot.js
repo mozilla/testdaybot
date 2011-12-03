@@ -19,7 +19,9 @@ client.addListener('join', function(channel, who){
 
     } else {
       console.log("Greeted " + who);
-      client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
+      setTimeout(function(){ 
+        client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
+        }, 2000);
     }
   }
 });
