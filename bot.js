@@ -9,7 +9,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/testday-111202-webapps';
+    etherpad = 'https://etherpad.mozilla.org/testday-20111209';
 
 client.addListener('join', function(channel, who){
   if (who !== nick){
