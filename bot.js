@@ -53,3 +53,5 @@ client.addListener('part', function(channel, who, reason){
 client.addListener('error', function(message){
   console.error(message);
 });
+
+setTimeout(function(){process.exit()}, 86400000);
