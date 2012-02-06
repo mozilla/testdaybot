@@ -4,7 +4,7 @@ var irc = require('irc');
 var ircServer = 'irc.mozilla.org',
     nick = '_TestDayBot',
     options = {
-      channels: ['#testday'],
+      channels: ['#autotest'],
       autoRejoin: true,
     },
     client = new irc.Client(ircServer, nick, options),
@@ -15,8 +15,16 @@ client.addListener('join', function(channel, who){
   if (who !== nick){
     var lastMessageTime = Date.now() - lastQuit[who];
 
-    if (lastQuit[who] && lastMessageTime < 1800000){
-
+    if (lastQuit[who]){
+      switch (true){
+        case (lastMessageTime < 1800000):
+          break;
+        case (lastMessageTime < 86400000):
+          setTimeout(function(){ 
+            client.say(channel, "Welcome back to the Test Day " + who + "!");
+          }, 2000);
+          break;
+      }
     } else {
       console.log("Greeted " + who);
       setTimeout(function(){ 
