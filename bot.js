@@ -9,7 +9,13 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/testday-20120203';
+    etherpad = 'https://etherpad.mozilla.org/testday-20120203',
+    metrics = {
+      greetedName: [],
+      greetedNumber: 0,
+      firebotBugs:[],
+      usersTalked: {},
+    };
 
 client.addListener('join', function(channel, who){
   if (who !== nick){
@@ -30,6 +36,8 @@ client.addListener('join', function(channel, who){
       setTimeout(function(){ 
         client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
         }, 2000);
+      metrics.greetedName.push(who);
+      metrics.greetedNumber +=1;
     }
   }
 });
@@ -47,6 +55,38 @@ client.addListener('message', function(from, to, message){
   }
   if (message.search('[!:]qmo') >= 0){
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
+  }
+  if (from === 'firebot'){
+    if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
+      metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
+    }
+  }
+  if (from in metrics.usersTalked) {
+    metrics.usersTalked[from] += 1;
+  } else {
+    metrics.usersTalked[from] = 1;
+  }
+});
+
+client.addListener('pm', function(nick, message){
+  if (message.search('stats') === 0){
+    var keys = Object.keys(metrics);
+    var what = Object.prototype.toString;
+    for (var i = 0; i < keys.length; i++){
+      if (what.call(metrics[keys[i]]).search('Array') > 0){
+        console.log(keys[i] + ":  " + metrics[keys[i]].join(", "));
+      } else {
+        if (keys[i] == "usersTalked"){
+          console.log("The following people were active in the channel: ");
+          var speakers = Object.keys(metrics.usersTalked);
+          for (var t = 0; t < speakers.length; t++){
+            console.log(speakers[t] + ": " + metrics.usersTalked[speakers[t]]); 
+          }
+        } else {
+          console.log(keys[i] + ": " + metrics[keys[i]]);
+        }
+      }
+    }
   }
 });
 
