@@ -70,23 +70,8 @@ client.addListener('message', function(from, to, message){
 
 client.addListener('pm', function(nick, message){
   if (message.search('stats') === 0){
-    var keys = Object.keys(metrics);
-    var what = Object.prototype.toString;
-    for (var i = 0; i < keys.length; i++){
-      if (what.call(metrics[keys[i]]).search('Array') > 0){
-        console.log(keys[i] + ":  " + metrics[keys[i]].join(", "));
-      } else {
-        if (keys[i] == "usersTalked"){
-          console.log("The following people were active in the channel: ");
-          var speakers = Object.keys(metrics.usersTalked);
-          for (var t = 0; t < speakers.length; t++){
-            console.log(speakers[t] + ": " + metrics.usersTalked[speakers[t]]); 
-          }
-        } else {
-          console.log(keys[i] + ": " + metrics[keys[i]]);
-        }
-      }
-    }
+    var stats = new Stats();
+    stats.generateStats(metrics);
   }
 });
 
@@ -102,4 +87,31 @@ client.addListener('error', function(message){
   console.error(message);
 });
 
-setTimeout(function(){process.exit()}, 86400000);
+setTimeout(function(){
+    var stats = new Stats();
+    stats.generateStats(metrics);
+    process.exit()
+  }, 86400000);
+
+
+var Stats = function(){};
+
+Stats.prototype.generateStats = function(metrcs){
+  var keys = Object.keys(metrccs);
+  var what = Object.prototype.toString;
+  for (var i = 0; i < keys.length; i++){
+    if (what.call(metrcs[keys[i]]).search('Array') > 0){
+      console.log(keys[i] + ":  " + metrcs[keys[i]].join(", "));
+    } else {
+      if (keys[i] == "usersTalked"){
+        console.log("The following people were active in the channel: ");
+        var speakers = Object.keys(metrcs.usersTalked);
+        for (var t = 0; t < speakers.length; t++){
+          console.log(speakers[t] + ": " + metrcs.usersTalked[speakers[t]]); 
+        }
+      } else {
+        console.log(keys[i] + ": " + metrcs[keys[i]]);
+      }
+    }
+  }
+};
