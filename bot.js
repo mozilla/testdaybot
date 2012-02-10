@@ -4,7 +4,7 @@ var irc = require('irc');
 var ircServer = 'irc.mozilla.org',
     nick = '_TestDayBot',
     options = {
-      channels: ['#autotest'],
+      channels: ['#testday'],
       autoRejoin: true,
     },
     client = new irc.Client(ircServer, nick, options),
