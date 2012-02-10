@@ -97,7 +97,7 @@ setTimeout(function(){
 var Stats = function(){};
 
 Stats.prototype.generateStats = function(metrcs){
-  var keys = Object.keys(metrccs);
+  var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
   for (var i = 0; i < keys.length; i++){
     if (what.call(metrcs[keys[i]]).search('Array') > 0){
