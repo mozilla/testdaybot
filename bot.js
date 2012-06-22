@@ -9,7 +9,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/fx16-unconfirmed-bugs-testday',
+    etherpad = 'https://etherpad.mozilla.org/testday-20120622',
     metrics = {
       greetedName: [],
       greetedNumber: 0,
