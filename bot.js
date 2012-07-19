@@ -1,5 +1,6 @@
 // Requires
-var irc = require('irc');
+var irc = require('irc')
+  , http = require('http');
 
 var ircServer = 'irc.mozilla.org',
     nick = '_TestDayBot',
@@ -9,7 +10,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/testday-20120713',
+    etherpad = 'https://etherpad.mozilla.org/testday-20120720',
     metrics = {
       greetedName: [],
       greetedNumber: 0,
@@ -97,6 +98,23 @@ setTimeout(function(){
 var Stats = function(){};
 
 Stats.prototype.generateStats = function(metrcs){
+  metrcs.testday = etherpad;
+  var options = {
+    host: 'testdayserver.appspot.com',
+    port: 80,
+    path: '/bot',
+    method: 'POST',
+    headers: {
+      'Content-length': JSON.stringify(metrcs).length,
+    }
+  };
+  var req = http.request(options, function(res){});
+  req.on('error', function(e){
+    console.error(e);
+  });
+  req.write(JSON.stringify(metrcs));
+  req.end();
+  
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
   for (var i = 0; i < keys.length; i++){
