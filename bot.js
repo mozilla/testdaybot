@@ -10,7 +10,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/testday-20120810',
+    etherpad = 'https://etherpad.mozilla.org/testday-20120817',
     metrics = {
       greetedName: [],
       greetedNumber: 0,
@@ -108,7 +108,9 @@ Stats.prototype.generateStats = function(metrcs){
       'Content-length': JSON.stringify(metrcs).length,
     }
   };
-  var req = http.request(options, function(res){});
+  var req = http.request(options, function(res){
+    console.log("REQUEST SENT TO APPENGINE");
+  });
   req.on('error', function(e){
     console.error(e);
   });
