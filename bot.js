@@ -90,14 +90,15 @@ client.addListener('error', function(message){
 
 setTimeout(function(){
     var stats = new Stats();
-    stats.generateStats(metrics);
-    process.exit()
+    stats.generateStats(metrics, function() {
+      process.exit();
+    });
   }, 86400000);
 
 
 var Stats = function(){};
 
-Stats.prototype.generateStats = function(metrcs){
+Stats.prototype.generateStats = function(metrcs, callback){
   metrcs.testday = etherpad;
   var options = {
     host: 'testdayserver.appspot.com',
@@ -134,4 +135,5 @@ Stats.prototype.generateStats = function(metrcs){
       }
     }
   }
+  callback();
 };
