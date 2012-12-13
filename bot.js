@@ -116,6 +116,7 @@ Stats.prototype.generateStats = function(metrcs, callback){
   req.on('error', function(e){
     console.error(e);
   });
+
   req.write(JSON.stringify(metrcs));
   req.end();
 
