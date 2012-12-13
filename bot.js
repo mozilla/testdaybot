@@ -118,7 +118,7 @@ Stats.prototype.generateStats = function(metrcs, callback){
   });
   req.write(JSON.stringify(metrcs));
   req.end();
-  
+
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
   for (var i = 0; i < keys.length; i++){
