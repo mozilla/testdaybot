@@ -10,7 +10,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://etherpad.mozilla.org/testday',
+    etherpad = 'https://etherpad.mozilla.org/automation-testday-20121214',
     metrics = {
       greetedName: [],
       greetedNumber: 0,
