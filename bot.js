@@ -95,7 +95,6 @@ setTimeout(function(){
     });
   }, 86400000);
 
-
 var Stats = function(){};
 
 Stats.prototype.generateStats = function(metrcs, callback){
