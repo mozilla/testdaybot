@@ -111,7 +111,7 @@ Stats.prototype.generateStats = function(metrcs, callback){
   };
   var req = http.request(options, function(res){
     console.log("REQUEST SENT TO APPENGINE");
-    callback;
+    callback();
   });
   req.on('error', function(e){
     console.error(e);
