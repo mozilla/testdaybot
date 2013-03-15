@@ -16,6 +16,7 @@ var ircServer = 'irc.mozilla.org',
       greetedNumber: 0,
       firebotBugs:[],
       usersTalked: {},
+      hourUTC: {},
     };
 
 client.addListener('join', function(channel, who){
@@ -66,6 +67,12 @@ client.addListener('message', function(from, to, message){
     metrics.usersTalked[from] += 1;
   } else {
     metrics.usersTalked[from] = 1;
+  }
+  var nowHour = new Date().getUTCHours().toString();
+  if (nowHour in metrics.hourUTC) {
+    metrics.hourUTC[nowHour] += 1;
+  } else {
+    metrics.hourUTC[nowHour] = 1;
   }
 });
 
@@ -130,6 +137,12 @@ Stats.prototype.generateStats = function(metrcs, callback){
         var speakers = Object.keys(metrcs.usersTalked);
         for (var t = 0; t < speakers.length; t++){
           console.log(speakers[t] + ": " + metrcs.usersTalked[speakers[t]]); 
+        }
+      } else if (keys[i] == "hourUTC") {
+        console.log("The following hours were active in the channel: ");
+        var speakers = Object.keys(metrcs.hourUTC);
+        for (var t = 0; t < speakers.length; t++){
+          console.log(speakers[t] + ": " + metrcs.hourUTC[speakers[t]]); 
         }
       } else {
         console.log(keys[i] + ": " + metrcs[keys[i]]);
