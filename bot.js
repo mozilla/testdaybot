@@ -17,7 +17,8 @@ var ircServer = 'irc.mozilla.org',
       firebotBugs:[],
       usersTalked: {},
       hourUTC: {},
-    };
+    },
+    RUNNING_TIME = 1000 * 60 * 60 * 20;
 
 client.addListener('join', function(channel, who){
   if (who !== nick){
@@ -27,7 +28,7 @@ client.addListener('join', function(channel, who){
       switch (true){
         case (lastMessageTime < 1800000):
           break;
-        case (lastMessageTime < 86400000):
+        case (lastMessageTime < RUNNING_TIME):
           setTimeout(function(){ 
             client.say(channel, "Welcome back to the Test Day " + who + "!");
           }, 2000);
@@ -100,7 +101,7 @@ setTimeout(function(){
     stats.generateStats(metrics, function() {
       process.exit();
     });
-  }, 86400000);
+  }, RUNNING_TIME);
 
 var Stats = function(){};
 
