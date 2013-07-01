@@ -10,7 +10,7 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     lastQuit = {},
-    etherpad = 'https://metro.etherpad.mozilla.org/metrotestday-20130628',
+    etherpad = 'https://etherpad.mozilla.org/testday-mixed-content',
     metrics = {
       greetedName: [],
       greetedNumber: 0,
@@ -29,14 +29,14 @@ client.addListener('join', function(channel, who){
         case (lastMessageTime < 1800000):
           break;
         case (lastMessageTime < RUNNING_TIME):
-          setTimeout(function(){ 
+          setTimeout(function(){
             client.say(channel, "Welcome back to the Test Day " + who + "!");
           }, 2000);
           break;
       }
     } else {
       console.log("Greeted " + who);
-      setTimeout(function(){ 
+      setTimeout(function(){
         client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
         }, 2000);
       metrics.greetedName.push(who);
@@ -137,13 +137,13 @@ Stats.prototype.generateStats = function(metrcs, callback){
         console.log("The following people were active in the channel: ");
         var speakers = Object.keys(metrcs.usersTalked);
         for (var t = 0; t < speakers.length; t++){
-          console.log(speakers[t] + ": " + metrcs.usersTalked[speakers[t]]); 
+          console.log(speakers[t] + ": " + metrcs.usersTalked[speakers[t]]);
         }
       } else if (keys[i] == "hourUTC") {
         console.log("The following hours were active in the channel: ");
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++){
-          console.log(speakers[t] + ": " + metrcs.hourUTC[speakers[t]]); 
+          console.log(speakers[t] + ": " + metrcs.hourUTC[speakers[t]]);
         }
       } else {
         console.log(keys[i] + ": " + metrcs[keys[i]]);
