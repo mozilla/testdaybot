@@ -1,0 +1,13 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/dburns/development/testdaybot",
+			"folder_exclude_patterns": ["node_modules"]
+		}
+	],
+	"settings":
+	{
+	    "tab_size": 2
+	}
+}
