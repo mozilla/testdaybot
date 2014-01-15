@@ -54,7 +54,7 @@ client.addListener('message', function(from, to, message){
     client.say(to, "Today's etherpad is " + etherpad);
   }
   if (message.search('[!:]sumo') >= 0){
-    client.say(to, "SUMO is short for http://support.mozilla.com, the official, community-powered support website for Mozilla Firefox");
+    client.say(to, "SUMO is short for http://support.mozilla.org, the official, community-powered support website for Mozilla Firefox");
   }
   if (message.search('[!:]qmo') >= 0){
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
