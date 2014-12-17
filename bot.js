@@ -122,7 +122,6 @@ client.addListener('message', function(from, to, message){
       metrics.hourUTC[nowHour] = 1;
     }
   }
-});
 
 client.addListener('pm', function(from, message){ // private messages to bot
   checkTestDay();
