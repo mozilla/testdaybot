@@ -3,7 +3,7 @@ var irc = require('irc'),
     http = require('http');
 
 var ircServer = 'irc.mozilla.org',
-    nick = '_TestDayBot', // TODO: a different nick for this bot, if running on #qa?
+    nick = '_TestDayBot',
     options = {
       channels: ['#testdaybotTest'], // TODO: #qa for production?
       autoRejoin: true,
@@ -19,10 +19,20 @@ var ircServer = 'irc.mozilla.org',
       hourUTC: {},
     },
     testDay = false,
+    testDayAdmin = false,
     testDayAdmins = ["ashughes", "whimboo", "galgeek"],
-    RUNNING_TIME = 1000 * 60 * 60 * 2; //last number = hours to run...
+    RUNNING_TIME = 1000 * 60 * 60 * 20; // 20 = hours to run Test Day
+
+function checkTestDay() {
+  if (testDay){
+    if (Date.now() - startTime > RUNNING_TIME){
+      testDay = false;
+    }
+  }
+}
 
 client.addListener('join', function(channel, who){
+  checkTestDay();
   if (testDay){ // greet people on test days only
     if (who !== nick){
       var lastMessageTime = Date.now() - lastQuit[who];
@@ -50,28 +60,7 @@ client.addListener('join', function(channel, who){
 });
 
 client.addListener('message', function(from, to, message){
-  if (message.search('[!:]help') >= 0){
-    client.say(to, ":help - print this list\n:bug - learn how to report a bug\n:etherpad - show today's etherpad\n:sumo - show link to SUMO\n:qmo - show link to QMO");
-  }
-  if (message.search('[!:]bug') >= 0){
-    client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
-  }
-  if (message.search('[!:]etherpad') >= 0){
-    client.say(to, "Today's etherpad is " + etherpad);
-  }
-  if (message.search('[!:]sumo') >= 0){
-    client.say(to, "SUMO is short for http://support.mozilla.org, the official, community-powered support website for Mozilla Firefox");
-  }
-  if (message.search('[!:]qmo') >= 0){
-    client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
-  }
-
-  if (from === 'firebot'){ // does this do anything without another bot running in the channel?
-    if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
-      metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
-    }
-  }
-
+  checkTestDay();
   if (testDay){ // collect stats on test days only
     if (from in metrics.usersTalked) {
       metrics.usersTalked[from] += 1;
@@ -85,39 +74,69 @@ client.addListener('message', function(from, to, message){
       metrics.hourUTC[nowHour] = 1;
     }
   }
+
+  if (to === nick){ // handle private messages to _TestDayBot
+    to = from;
+  }
+
+  if (from === 'firebot'){ // does this do anything without another bot running in the channel?
+    if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
+      metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
+    }
+  }
+
+  if (message.search('[!:]help') === 0){
+    client.say(to, "commands I know:\n:help - print this list\n:bug - learn how to report a bug\n:etherpad - show today's etherpad\n:sumo - show link to SUMO\n:qmo - show link to QMO");
+    return;
+  }
+  if (message.search('[!:]bug') === 0){
+    client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
+    return;
+  }
+  if (message.search('[!:]etherpad') === 0){
+    client.say(to, "Today's etherpad is " + etherpad);
+    return;
+  }
+  if (message.search('[!:]sumo') === 0){
+    client.say(to, "SUMO is short for http://support.mozilla.org, the official, community-powered support website for Mozilla Firefox");
+    return;
+  }
+  if (message.search('[!:]qmo') === 0){
+    client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
+    return;
+  }
 });
 
-client.addListener('pm', function(nick, message){
-  if (testDayAdmins.indexOf(nick) >= 0) {
-    client.say(nick, nick + " is a test day admin!");
-    if (message.search(":help") === 0){
-      client.say(nick, ":help - print this list\n:setEtherpad <url>\n:addTestDayAdmin <nick>\n:testDayStart\n:stats\n:testDayStop");
+client.addListener('pm', function(pmfrom, message){
+  checkTestDay();
+  if (testDayAdmins.indexOf(pmfrom) >= 0) {
+    client.say(pmfrom, pmfrom + ' is a Test Day admin!');
+    if (message.search(":admin") === 0){
+      client.say(pmfrom, ':admin - print this list, :addAdmin <nickname>, :start <http://etherpad>, :stats, :stop');
     }
-    if (message.search(":setEtherpad") === 0){
-      etherpad = message.slice(message.indexOf(" ") + 1);
-      client.say(nick, 'set test day etherpad to ' + etherpad);
-    }
-    if (message.search(":addTestDayAdmin") === 0){
+    if (message.search(":addAdmin") === 0){
       addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
-      testDayAdmins.push(addTestDayAdmin)
-      client.say(nick, 'set test day admins to ' + testDayAdmins.toString());
+      testDayAdmins.push(addTestDayAdmin);
+      client.say(pmfrom, 'set test day admins to ' + testDayAdmins.toString());
+    }
+    if (message.search(":stats") === 0){
+      var stats = new Stats();
+      stats.generateStats(metrics);
     }
     if (testDay){
-      if (message.search(":stats") === 0){
-        var stats = new Stats();
-        stats.generateStats(metrics);
-      }
-      if (message.search(":testDayStop") === 0){
+      if (message.search(":stop") === 0){
         testDay = false;
-        client.say(nick, "testDay is now " + testDay.toString());
+        client.say(pmfrom, "testDay is now " + testDay.toString());
         var stats = new Stats();
         stats.generateStats(metrics);
-        // TODO: other tidying up?
+        // TODO: other tidying up? reporting?
       }
     } else {
-      if (message.search(":testDayStart") === 0){
+      if (message.search(":start") === 0){
         testDay = true;
-        // re-initialize stats-related variables
+        etherpad = message.slice(message.indexOf(" ") + 1);
+        startTime = Date.now();
+        // re-initialize stats-related variables?
         lastQuit = {};
         metrics = {
           greetedName: [],
@@ -127,19 +146,23 @@ client.addListener('pm', function(nick, message){
           hourUTC: {},
         };
         // TODO: other initialization?
-        client.say(nick, "testDay is now " + testDay.toString());
+        client.say(pmfrom, "testDay is now " + testDay.toString());
+        client.say(pmfrom, "Today's etherpad is " + etherpad);
+        client.say(pmfrom, "Today's test day admins are " + testDayAdmins);
       }
     }
   }
 });
 
 client.addListener('quit', function(who, reason, channel){
+  checkTestDay();
   if (testDay){
     lastQuit[who] = Date.now();
   }
 });
 
 client.addListener('part', function(channel, who, reason){
+  checkTestDay();
   if (testDay){
     lastQuit[who] = Date.now();
   }
