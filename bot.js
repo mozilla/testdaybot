@@ -5,68 +5,75 @@ var irc = require('irc')
 var ircServer = 'irc.mozilla.org',
     nick = '_TestDayBot',
     options = {
-      channels: ['#testdaybotTest'], // for testing; to be run in #qa?
+      channels: ['#qa'],
       autoRejoin: true,
     },
     client = new irc.Client(ircServer, nick, options),
-    lastQuit = {},
     etherpad = process.argv[2],
+    lastQuit = {};
     metrics = {
       greetedName: [],
       greetedNumber: 0,
       firebotBugs:[],
       usersTalked: {},
       hourUTC: {},
-    },
+    };
     testDay = false,
     testDayAdmins = ["ashughes", "whimboo", "galgeek"],
-    helpers = ["ashughes"],
-    startTime = Date.now(),
-    endTime = startTime,
+    startTime = Date.now();
+    endTime = startTime;
     runTime = 0;
+    helpers = ["ashughes"],
+    help = { ":help" : "This is Help! :)",
+             ":bug"  : "Learn how to report a bug",
+             ":qmo"  : "Learn about Quality at Mozilla",
+             ":sumo" : "Learn about Support at Mozilla",
+             ":etherpad" : "View the Test Day etherpad"
+    },
+    adminhelp = { ":adminhelp" : "This is Admin Help! :)",
+                  ":addAdmin <nickname>" : "Add a Test Day Admin",
+                  ":addHelper <nickname>" : "Add a Test Day Helper",
+                  ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic>" : "Schedule a Test Day",
+                  ":stats" : "View Test Day Stats",
+                  ":stop" : "Stop a Test Day Early"
+    };
+
+function resetData() {
+  lastQuit = {};
+  metrics = {
+    greetedName: [],
+    greetedNumber: 0,
+    firebotBugs:[],
+    usersTalked: {},
+    hourUTC: {},
+  };
+}
+
+function resetTime() {
+  startTime = Date.now();
+  endTime = startTime;
+  runTime = 0;
+}
 
 function checkTestDay() {
   if (testDay){
     if (Date.now() > endTime){
       testDay = false;
+      resetTime();
     }
   } else {
-    if (Date.now() < endTime && Date.now() > startTime){
+    if ((Date.now() < endTime) && (Date.now() > startTime)){
       testDay = true;
-      // re-initialize stats-related variables
-      lastQuit = {};
-      metrics = {
-        greetedName: [],
-        greetedNumber: 0,
-        firebotBugs:[],
-        usersTalked: {},
-        hourUTC: {},
-      };
+      resetData();
     }
   }
 }
 
 client.addListener('join', function(channel, who){
   checkTestDay();
-  if (testDay){ // greet people only on test days
+  if (testDay){ // record stats only on test days
     if (who !== nick){
-      var lastMessageTime = Date.now() - lastQuit[who];
-
-      if (lastQuit[who]){
-        switch (true){
-          case (lastMessageTime < 1800000):
-            break;
-          case (lastMessageTime < runTime):
-            setTimeout(function(){
-              client.say(channel, "Welcome back to the Test Day " + who + "!");
-            }, 2000);
-            break;
-        }
-      } else {
-        console.log("Greeted " + who);
-        setTimeout(function(){
-          client.say(channel, "Welcome to the Test Day " + who + "! Details of the Test Day can be found at " + etherpad);
-          }, 2000);
+      if (!lastQuit[who]){
         metrics.greetedName.push(who);
         metrics.greetedNumber +=1;
       }
@@ -76,8 +83,13 @@ client.addListener('join', function(channel, who){
 
 client.addListener('message', function(from, to, message){
   checkTestDay();
+  if (to === nick){ // private message to bot
+    to = from;
+  }
   if (message.search('[!:]help') >= 0){
-    client.say(to, "Commands I know:\n :bug\n :qmo\n :sumo\n :etherpad (test days)");
+    for (var item in help){
+      client.say(from, item + " : " + help[item]);
+    }
   }
   if (message.search('[!:]bug') >= 0){
     client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
@@ -88,10 +100,14 @@ client.addListener('message', function(from, to, message){
   if (message.search('[!:]qmo') >= 0){
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
-  if (testDay){
-    if (message.search('[!:]etherpad') >= 0){
+  if (message.search('[!:]etherpad') >= 0){
+    if (testDay){
       client.say(to, "Today's etherpad is " + etherpad);
+    } else {
+      client.say(to, "Next Test Day's etherpad is " + etherpad);
     }
+  }
+  if (testDay){
     if (from === 'firebot'){
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
         metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
@@ -115,9 +131,9 @@ client.addListener('pm', function(from, message){ // private messages to bot
   checkTestDay();
   if (testDayAdmins.indexOf(from) >= 0){
     if (message.search(':adminhelp') === 0){
-      client.say(from, "admin commands:\n  :addAdmin <nickname>\n  :addHelper <nickname>\n" + 
-                       "  :next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic>\n" + 
-                       "  :start <etherpad> <topic>\n  :stats\n  :stop");
+      for (var item in adminhelp){
+        client.say(from, item + " : " + adminhelp[item]);
+      }
       return;
     }
     if (message.search(':addAdmin') === 0){
@@ -140,33 +156,11 @@ client.addListener('pm', function(from, message){ // private messages to bot
     if (testDay){
       if (message.search(':stop') === 0){
         testDay = false;
+        resetTime();
         client.say(from, "testDay is now " + testDay.toString());
         return;
       }
     } else {
-      if (message.search(':start') === 0){
-        testDay = true;
-        args = message.slice(message.indexOf(" ") + 1);
-        etherpad = args.slice(0, args.indexOf(" "));
-        topic = args.slice(args.indexOf(" ") + 1);
-        startTime = Date.now();
-        runTime = 1000 * 60 * 60 * 20;  // default: 20 hours
-        endTime = startTime + runTime;
-        // re-initialize stats-related variables
-        lastQuit = {};
-        metrics = {
-          greetedName: [],
-          greetedNumber: 0,
-          firebotBugs:[],
-          usersTalked: {},
-          hourUTC: {},
-        };
-        // TODO: other initialization?
-        client.say(from, "testDay is now " + testDay.toString());
-        client.say(from, "Today's etherpad is " + etherpad);
-        client.say(from, "Today's topic is " + topic);
-        return;
-      }
       if (message.search(':next') === 0){
         args = message.slice(message.indexOf(" ") + 1);
         startTime = new Date(args.slice(0, args.indexOf(" ")));
