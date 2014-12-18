@@ -232,7 +232,7 @@ Stats.prototype.generateStats = function(metrcs, from){
           client.say(from, speakers[t] + ": " + metrcs.usersTalked[speakers[t]]);
         }
       } else if (keys[i] == "hourUTC") {
-        client.say(from, "The following hours were active in the channel: ");
+        client.say(from, "The following hours (UTC) were active in the channel: ");
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++){
           client.say(from, speakers[t] + ": " + metrcs.hourUTC[speakers[t]]);
