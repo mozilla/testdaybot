@@ -5,5 +5,5 @@ This is an IRC bot that greets users as they come into the channel and tell them
 ## How to run
 
 ``` javascript
-    node bot.js <testday etherpad>
+    node bot.js
 ```
