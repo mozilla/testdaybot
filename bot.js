@@ -10,19 +10,19 @@ var ircServer = 'irc.mozilla.org',
     },
     client = new irc.Client(ircServer, nick, options),
     etherpad = process.argv[2],
-    lastQuit = {};
+    lastQuit = {},
     metrics = {
       greetedName: [],
       greetedNumber: 0,
       firebotBugs:[],
       usersTalked: {},
       hourUTC: {},
-    };
+    },
     testDay = false,
     testDayAdmins = ["ashughes", "whimboo", "galgeek"],
-    startTime = Date.now();
-    endTime = startTime;
-    runTime = 0;
+    startTime = Date.now(),
+    endTime = startTime,
+    runTime = 0,
     helpers = ["ashughes"],
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
