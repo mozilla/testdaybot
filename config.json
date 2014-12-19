@@ -1,0 +1,10 @@
+{
+	"channels": ["#testdaybotTest"],
+	"server": "irc.mozilla.org",
+	"botName": "_TestDayBot",
+	"port": "6697",
+	"secure": "true",
+        "autoRejoin": "true",
+        "testDayAdmins": ["ashughes","whimboo","galgeek"],
+        "helpers": ["ashughes"]
+}

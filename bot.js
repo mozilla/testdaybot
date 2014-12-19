@@ -1,15 +1,21 @@
 // Requires
-var irc = require('irc')
-  , http = require('http');
+var irc = require('irc'),
+    http = require('http'),
+    config = require("./config");
 
-var ircServer = 'irc.mozilla.org',
-    nick = '_TestDayBot',
+var ircServer = config.server,
+    nick = config.botName,
     options = {
-      channels: ['#qa'],
-      autoRejoin: true,
+      channels: config.channels,
+      autoRejoin: config.autoRejoin,
     },
     client = new irc.Client(ircServer, nick, options),
-    etherpad = process.argv[2],
+    etherpad = "",
+    testDay = false,
+    testDayAdmins = config.testDayAdmins,
+    helpers = config.helpers,
+    startTime = Date.now(),
+    endTime = startTime,
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -18,12 +24,6 @@ var ircServer = 'irc.mozilla.org',
       usersTalked: {},
       hourUTC: {},
     },
-    testDay = false,
-    testDayAdmins = ["ashughes", "whimboo", "galgeek"],
-    startTime = Date.now(),
-    endTime = startTime,
-    runTime = 0,
-    helpers = ["ashughes"],
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
              ":qmo"  : "Learn about Quality at Mozilla",
@@ -49,17 +49,10 @@ function resetData() {
   };
 }
 
-function resetTime() {
-  startTime = Date.now();
-  endTime = startTime;
-  runTime = 0;
-}
-
 function checkTestDay() {
   if (testDay){
     if (Date.now() > endTime){
       testDay = false;
-      resetTime();
     }
   } else {
     if ((Date.now() < endTime) && (Date.now() > startTime)){
@@ -101,10 +94,14 @@ client.addListener('message', function(from, to, message){
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
   if (message.search('[!:]etherpad') >= 0){
-    if (testDay){
-      client.say(to, "Today's etherpad is " + etherpad);
+    if (etherpad){
+      if (testDay){
+        client.say(to, "Today's etherpad is " + etherpad);
+      } else {
+        client.say(to, "Next Test Day's etherpad is " + etherpad);
+      }
     } else {
-      client.say(to, "Next Test Day's etherpad is " + etherpad);
+      client.say(to, "No etherpad is set.");
     }
   }
   if (testDay){
@@ -129,45 +126,58 @@ client.addListener('message', function(from, to, message){
 
 client.addListener('pm', function(from, message){ // private messages to bot
   checkTestDay();
-  if (testDayAdmins.indexOf(from) >= 0){
-    if (message.search(':adminhelp') === 0){
+  if (message.search(':adminhelp') === 0){
+    if (testDayAdmins.indexOf(from) >= 0){
       for (var item in adminhelp){
         client.say(from, item + " : " + adminhelp[item]);
       }
-      return;
+    } else {
+      client.say(from, "sorry! you're not a Test Day admin.");
     }
-    if (message.search(':addAdmin') === 0){
+  } else if (message.search(':addAdmin') === 0){
+    if (testDayAdmins.indexOf(from) >= 0){
       addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
       client.whois(addTestDayAdmin, function(whoisinfo){
-        if (whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
+        if (whoisinfo && whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
           testDayAdmins.push(addTestDayAdmin);
-          client.say(from, 'test day admins are now ' + testDayAdmins.toString());
+          client.say(from, 'Test Day admins are now ' + testDayAdmins.toString());
         } else {
-          client.say(from, 'sorry! ' + addTestDayAdmin + " isn't using a registered nick.");
-          client.say(from, 'test day admins are still ' + testDayAdmins.toString());
+          client.say(from, 'sorry! ' + addTestDayAdmin + ' is not using a registered nick.');
+          client.say(from, 'Test Day admins are still ' + testDayAdmins.toString());
         }
       });
+    } else {
+      client.say(from, "sorry! you're not a Test Day admin.");
     }
-    if (message.search(':addHelper') === 0){
+  } else if (message.search(':addHelper') === 0){
+    if (testDayAdmins.indexOf(from) >= 0){
       addHelper = message.slice(message.indexOf(" ") + 1);
       helpers.push(addHelper);
       client.say(from, 'test day helpers are now ' + helpers.toString());
-      return;
+    } else {
+      client.say(from, "sorry! you're not a Test Day admin.");
     }
-    if (message.search(':stats') === 0){
+  } else if (message.search(':stats') === 0){
+    if (testDayAdmins.indexOf(from) >= 0){
       var stats = new Stats();
       stats.generateStats(metrics, from);
-      return;
-    }
-    if (testDay){
-      if (message.search(':stop') === 0){
-        testDay = false;
-        resetTime();
-        client.say(from, "testDay is now " + testDay.toString());
-        return;
-      }
     } else {
-      if (message.search(':next') === 0){
+      client.say(from, "sorry! you're not a Test Day admin.");
+    }
+  }
+  if (testDay){
+    if (message.search(':stop') === 0){
+      if (testDayAdmins.indexOf(from) >= 0){
+        testDay = false;
+        endTime = Date.now();
+        client.say(from, "testDay is now " + testDay.toString());
+      } else {
+        client.say(from, "sorry! you're not a Test Day admin.");
+      }
+    }
+  } else {
+    if (message.search(':next') === 0){
+      if (testDayAdmins.indexOf(from) >= 0){
         args = message.slice(message.indexOf(" ") + 1);
         startTime = new Date(args.slice(0, args.indexOf(" ")));
         args = args.slice(args.indexOf(" ") + 1);
@@ -179,6 +189,8 @@ client.addListener('pm', function(from, message){ // private messages to bot
         client.say(from, "Next test day's end is " + endTime);
         client.say(from, "Next test day's etherpad is " + etherpad);
         client.say(from, "Next test day's topic is " + topic);
+      } else {
+        client.say(from, "sorry! you're not a Test Day admin.");
       }
     }
   }
@@ -199,7 +211,7 @@ client.addListener('part', function(channel, who, reason){
 });
 
 client.addListener('error', function(message){
-  console.error(message);
+  console.error('ERROR: %s: %s', message.command, message.args.join(' '));
 });
 
 var Stats = function(){};
