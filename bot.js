@@ -138,9 +138,15 @@ client.addListener('pm', function(from, message){ // private messages to bot
     }
     if (message.search(':addAdmin') === 0){
       addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
-      testDayAdmins.push(addTestDayAdmin);
-      client.say(from, 'test day admins are now ' + testDayAdmins.toString());
-      return;
+      client.whois(addTestDayAdmin, function(whoisinfo){
+        if (whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
+          testDayAdmins.push(addTestDayAdmin);
+          client.say(from, 'test day admins are now ' + testDayAdmins.toString());
+        } else {
+          client.say(from, 'sorry! ' + addTestDayAdmin + " isn't using a registered nick.");
+          client.say(from, 'test day admins are still ' + testDayAdmins.toString());
+        }
+      });
     }
     if (message.search(':addHelper') === 0){
       addHelper = message.slice(message.indexOf(" ") + 1);
