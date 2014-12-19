@@ -1,5 +1,5 @@
 {
-	"channels": ["#testdaybotTest"],
+	"channels": ["#qa"],
 	"server": "irc.mozilla.org",
 	"botName": "_TestDayBot",
 	"port": "6697",
