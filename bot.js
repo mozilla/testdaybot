@@ -4,7 +4,7 @@ var irc = require('irc'),
     config = require("./config");
 
 var ircServer = config.server,
-    nick = config.botName,
+    nick = config.nick,
     options = {
       channels: config.channels,
       autoRejoin: config.autoRejoin,
@@ -138,7 +138,7 @@ client.addListener('pm', function(from, message){ // private messages to bot
     if (testDayAdmins.indexOf(from) >= 0){
       addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
       client.whois(addTestDayAdmin, function(whoisinfo){
-        if (whoisinfo && whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
+        if (whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
           testDayAdmins.push(addTestDayAdmin);
           client.say(from, 'Test Day admins are now ' + testDayAdmins.toString());
         } else {

@@ -1,10 +1,10 @@
 {
-	"channels": ["#qa"],
-	"server": "irc.mozilla.org",
-	"botName": "_TestDayBot",
-	"port": "6697",
-	"secure": "true",
-        "autoRejoin": "true",
-        "testDayAdmins": ["ashughes","whimboo","galgeek"],
-        "helpers": ["ashughes"]
+    "channels": ["#qa"],
+    "server": "irc.mozilla.org",
+    "port": "6697",
+    "nick": "_TestDayBot",
+    "secure": "true",
+    "autoRejoin": "true",
+    "testDayAdmins": ["ashughes"],
+    "helpers": ["ashughes"]
 }
