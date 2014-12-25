@@ -159,7 +159,11 @@ client.addListener('pm', function(from, message){ // private messages to bot
               break;
             case ":bcast":
               if (command[1]){
+<<<<<<< HEAD
                 bcastMessage = message.slice(7);
+=======
+                bcastMessage = message.slice(6);
+>>>>>>> d6ea97dc48a51432fe0b441c8c0569511971a3c0
               }
               for (var channel in bcastChannels){
                 client.say(channel, bcastMessage);
