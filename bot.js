@@ -16,6 +16,8 @@ var ircServer = config.server,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
+    bcastChannels = ["#contributors", "#developers", "#interns", "#introduction", "#mozillians", "#newbies", "#seneca"],
+    bcastMessage = "Happy 2015!",
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -31,11 +33,12 @@ var ircServer = config.server,
              ":etherpad" : "View the Test Day etherpad"
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
-                  ":addAdmin <nickname>" : "Add a Test Day Admin",
-                  ":addHelper <nickname>" : "Add a Test Day Helper",
-                  ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic>" : "Schedule a Test Day",
-                  ":stats" : "View Test Day Stats",
-                  ":stop" : "Stop a Test Day Early"
+                  ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
+                  ":addHelper" : ":addHelper <nickname> as a Test Day helper",
+                  ":bcast" : ":bcast to broadcast channels; include <message> to update broadcast message"
+                  ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
+                  ":stats" : ":stats display Test Day stats",
+                  ":stop" : ":stop Test Day early"
     };
 
 function resetData() {
@@ -126,72 +129,80 @@ client.addListener('message', function(from, to, message){
 
 client.addListener('pm', function(from, message){ // private messages to bot
   checkTestDay();
-  if (message.search(':adminhelp') === 0){
+  var command = message.split(" ");
+  if (command[0] in adminhelp){ // admin command
     if (testDayAdmins.indexOf(from) >= 0){
-      for (var item in adminhelp){
-        client.say(from, item + " : " + adminhelp[item]);
-      }
-    } else {
-      client.say(from, "sorry! you're not a Test Day admin.");
-    }
-  } else if (message.search(':addAdmin') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
-      addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
-      client.whois(addTestDayAdmin, function(whoisinfo){
+      client.whois(from, function(whoisinfo){
         if (whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
-          testDayAdmins.push(addTestDayAdmin);
-          client.say(from, 'Test Day admins are now ' + testDayAdmins.toString());
+          // on the list and logged in; run the admin command
+          switch (command[0]) {
+            case ":adminhelp":
+              for (var item in adminhelp){
+                client.say(from, adminhelp[item]);
+              }
+              break;
+            case ":addAdmin":
+              if (command[1]){
+                testDayAdmins.push(command[1]);
+                client.say(from, 'Test Day admins are now ' + testDayAdmins.toString());
+              } else {
+                client.say(from, "need some help? " + adminhelp[command[0]]);
+              }
+              break;
+            case ":addHelper":
+              if (command[1]){
+                helpers.push(command[1]);
+                client.say(from, 'Test Day helpers are now ' + helpers.toString());
+              } else {
+                client.say(from, "need some help? " + adminhelp[command[0]]);
+              }
+              break;
+            case ":bcast":
+              if (command[1]){
+                bcastMessage = message.slice(7);
+              }
+              for (var channel in bcastChannels){
+                client.say(channel, bcastMessage);
+              }
+              break;
+            case ":stats":
+              var stats = new Stats();
+              stats.generateStats(metrics, from);
+              break;
+            case ":stop":
+              if (testDay){
+                testDay = false;
+                endTime = Date.now();
+                client.say(from, "Test Day stopped.");
+              } else {
+                client.say(from, "No Test Day is in progress.");
+              }
+              break;
+            case ":next":
+              if (testDay){
+                client.say(from, "Test Day in progress and scheduled to end " + endTime);
+              } else {
+                if (command[4]){
+                  startTime = new Date(command[1]);
+                  endTime = new Date(command[2]);
+                  etherpad = command[3];
+                  topic = message.slice(message.indexOf(etherpad) + etherpad.length + 1);
+                  client.say(from, "Next Test Day's start is " + startTime);
+                  client.say(from, "Next Test Day's end is " + endTime);
+                  client.say(from, "Next Test Day's etherpad is " + etherpad);
+                  client.say(from, "Next Test Day's topic is " + topic);
+                } else {
+                  client.say(from, "need some help? " + adminhelp[command[0]]);
+                }
+              }
+              break;
+          }
         } else {
-          client.say(from, 'sorry! ' + addTestDayAdmin + ' is not using a registered nick.');
-          client.say(from, 'Test Day admins are still ' + testDayAdmins.toString());
+          client.say(from, "sorry! you're not logged in with a registered nick.")
         }
       });
-    } else {
+    } else { // not on the Test Day admin list
       client.say(from, "sorry! you're not a Test Day admin.");
-    }
-  } else if (message.search(':addHelper') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
-      addHelper = message.slice(message.indexOf(" ") + 1);
-      helpers.push(addHelper);
-      client.say(from, 'test day helpers are now ' + helpers.toString());
-    } else {
-      client.say(from, "sorry! you're not a Test Day admin.");
-    }
-  } else if (message.search(':stats') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
-      var stats = new Stats();
-      stats.generateStats(metrics, from);
-    } else {
-      client.say(from, "sorry! you're not a Test Day admin.");
-    }
-  }
-  if (testDay){
-    if (message.search(':stop') === 0){
-      if (testDayAdmins.indexOf(from) >= 0){
-        testDay = false;
-        endTime = Date.now();
-        client.say(from, "testDay is now " + testDay.toString());
-      } else {
-        client.say(from, "sorry! you're not a Test Day admin.");
-      }
-    }
-  } else {
-    if (message.search(':next') === 0){
-      if (testDayAdmins.indexOf(from) >= 0){
-        args = message.slice(message.indexOf(" ") + 1);
-        startTime = new Date(args.slice(0, args.indexOf(" ")));
-        args = args.slice(args.indexOf(" ") + 1);
-        endTime = new Date(args.slice(0, args.indexOf(" ")));
-        args = args.slice(args.indexOf(" ") + 1);
-        etherpad = args.slice(0, args.indexOf(" "));
-        topic = args.slice(args.indexOf(" ") + 1);
-        client.say(from, "Next test day's start is " + startTime);
-        client.say(from, "Next test day's end is " + endTime);
-        client.say(from, "Next test day's etherpad is " + etherpad);
-        client.say(from, "Next test day's topic is " + topic);
-      } else {
-        client.say(from, "sorry! you're not a Test Day admin.");
-      }
     }
   }
 });
@@ -232,7 +243,7 @@ Stats.prototype.generateStats = function(metrcs, from){
           client.say(from, speakers[t] + ": " + metrcs.usersTalked[speakers[t]]);
         }
       } else if (keys[i] == "hourUTC") {
-        client.say(from, "The following hours were active in the channel: ");
+        client.say(from, "The following hours UTC were active in the channel: ");
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++){
           client.say(from, speakers[t] + ": " + metrcs.hourUTC[speakers[t]]);
