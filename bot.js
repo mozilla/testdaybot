@@ -16,6 +16,8 @@ var ircServer = config.server,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
+    bcastChannels = ["#contributors", "#developers", "#interns", "#introduction", "#mozillians", "#newbies", "#seneca"],
+    bcastMessage = "Happy 2015!",
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -33,6 +35,7 @@ var ircServer = config.server,
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
                   ":addHelper" : ":addHelper <nickname> as a Test Day helper",
+                  ":bcast" : ":bcast to broadcast channels; include <message> to update broadcast message"
                   ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
                   ":stats" : ":stats display Test Day stats",
                   ":stop" : ":stop Test Day early"
@@ -152,6 +155,14 @@ client.addListener('pm', function(from, message){ // private messages to bot
                 client.say(from, 'Test Day helpers are now ' + helpers.toString());
               } else {
                 client.say(from, "need some help? " + adminhelp[command[0]]);
+              }
+              break;
+            case ":bcast":
+              if (command[1]){
+                bcastMessage = message.slice(7);
+              }
+              for (var channel in bcastChannels){
+                client.say(channel, bcastMessage);
               }
               break;
             case ":stats":
