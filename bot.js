@@ -10,12 +10,16 @@ var ircServer = config.server,
       autoRejoin: config.autoRejoin,
     },
     client = new irc.Client(ircServer, nick, options),
+    channel = config.channels[0],
     etherpad = "",
     testDay = false,
     admins = config.admins,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
+    timerID = 0,
+    topic = "",
+    topic_backup = "",
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -57,24 +61,33 @@ function resetData() {
   };
 }
 
-function checkTestDay() {
+function updateTestDayData() {
   if (testDay) {
-    if (Date.now() > endTime) {
-      testDay = false;
+    testDay = false;
+    client.send('TOPIC', channel, topic_backup);
+    if (timerID !== 0) {
+      clearTimeout(timerID);
+      timerID = 0;
     }
   } else {
-    if ((Date.now() < endTime) && (Date.now() > startTime)) {
-      testDay = true;
-      resetData();
-    }
+    testDay = true;
+    resetData();
+    client.send('TOPIC', channel, topic);
+    timerID = setTimeout(updateTestDayData, endTime - Date.now());
   }
 }
 
-client.addListener('join', function(channel, who) {
-  checkTestDay();
-  if (testDay) { // record stats only on test days
-    if (who !== nick) {
-      if (!lastQuit[who]) {
+client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
+  if (!testDay && (aChannel === channel)){
+    // save a non-Test Day topic to restore after Test Day
+    topic_backup = aChannelTopic;
+  }
+});
+
+client.addListener('join', function(aChannel, who){
+  if (testDay){ // record stats only on test days
+    if (who !== nick){
+      if (!lastQuit[who]){
         metrics.greetedName.push(who);
         metrics.greetedNumber +=1;
       }
@@ -84,7 +97,6 @@ client.addListener('join', function(channel, who) {
 
 client.addListener('message', function(from, to, message) {
   var intro;
-  checkTestDay();
 
   if (to === nick) { // private message to bot
     to = from;
@@ -226,8 +238,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
         break;
       case ":stop":
         if (testDay) {
-          testDay = false;
-          endTime = Date.now();
+          updateTestDayData();
           client.say(from, "Test Day stopped.");
         } else {
           client.say(from, "No Test Day is in progress.");
@@ -242,10 +253,19 @@ client.addListener('pm', function(from, message) { // private messages to bot
             endTime = new Date(command[2]);
             etherpad = command[3];
             topic = message.slice(message.indexOf(etherpad) + etherpad.length + 1);
-            client.say(from, "Next Test Day's start is " + startTime);
-            client.say(from, "Next Test Day's end is " + endTime);
-            client.say(from, "Next Test Day's etherpad is " + etherpad);
-            client.say(from, "Next Test Day's topic is " + topic);
+            // if the start and end dates appear valid, set the test date
+            if ((endTime > startTime) && (startTime > Date.now())) {
+              if (timerID !== 0) {
+                clearTimeout(timerID);
+              }
+              timerID = setTimeout(checkTestDay, startTime - Date.now());
+              client.say(from, "Next Test Day's start is " + startTime);
+              client.say(from, "Next Test Day's end is " + endTime);
+              client.say(from, "Next Test Day's etherpad is " + etherpad);
+              client.say(from, "Next Test Day's topic is " + topic);
+            } else {
+              client.say(from, "Please use valid dates.");
+            }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
           }
@@ -257,16 +277,14 @@ client.addListener('pm', function(from, message) { // private messages to bot
   });
 });
 
-client.addListener('quit', function(who, reason, channel) {
-  checkTestDay();
-  if (testDay) {
+client.addListener('quit', function(who, reason, aChannel){
+  if (testDay){
     lastQuit[who] = Date.now();
   }
 });
 
-client.addListener('part', function(channel, who, reason) {
-  checkTestDay();
-  if (testDay) {
+client.addListener('part', function(aChannel, who, reason){
+  if (testDay){
     lastQuit[who] = Date.now();
   }
 });
