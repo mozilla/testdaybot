@@ -16,6 +16,9 @@ var ircServer = config.server,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
+    topic = "",
+    qaTopic = "",
+    qaChannel = config.channels[0],
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -61,14 +64,22 @@ function checkTestDay() {
   if (testDay) {
     if (Date.now() > endTime) {
       testDay = false;
+      client.send('TOPIC', qaChannel, qaTopic);
     }
   } else {
     if ((Date.now() < endTime) && (Date.now() > startTime)) {
       testDay = true;
       resetData();
+      client.send('TOPIC', qaChannel, topic);
     }
   }
 }
+
+client.addListener('topic', function (channel, channelTopic, nick) {
+  if (!testDay && (channel === qaChannel)) {
+    qaTopic = channelTopic; // save a non-Test Day topic to restore after Test Day
+  }
+});
 
 client.addListener('join', function(channel, who) {
   checkTestDay();
