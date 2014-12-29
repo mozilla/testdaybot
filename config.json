@@ -5,6 +5,5 @@
     "nick": "_TestDayBot",
     "secure": "true",
     "autoRejoin": "true",
-    "testDayAdmins": ["ashughes","whimboo"],
-    "helpers": ["ashughes"]
+    "testDayAdmins": ["ashughes","whimboo"]
 }

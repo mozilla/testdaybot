@@ -13,7 +13,7 @@ var ircServer = config.server,
     etherpad = "",
     testDay = false,
     testDayAdmins = config.testDayAdmins,
-    helpers = config.helpers,
+    helpers = testDayAdmins,
     startTime = Date.now(),
     endTime = startTime,
     lastQuit = {},
@@ -28,7 +28,9 @@ var ircServer = config.server,
              ":bug"  : "Learn how to report a bug",
              ":qmo"  : "Learn about Quality at Mozilla",
              ":sumo" : "Learn about Support at Mozilla",
-             ":etherpad" : "View the Test Day etherpad"
+             ":etherpad" : "View the Test Day etherpad",
+             ":helpersShow" : "View Test Day helpers",
+             ":helpersSend" : "Send a help request to Test Day helpers"
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin <nickname>" : "Add a Test Day Admin",
@@ -39,6 +41,8 @@ var ircServer = config.server,
     };
 
 function resetData() {
+  testDayAdmins = config.testDayAdmins;
+  helpers = testDayAdmins;
   lastQuit = {};
   metrics = {
     greetedName: [],
@@ -79,7 +83,7 @@ client.addListener('message', function(from, to, message){
   if (to === nick){ // private message to bot
     to = from;
   }
-  if (message.search('[!:]help') >= 0){
+  if (message.search('[!:]help\\b') >= 0){
     for (var item in help){
       client.say(from, item + " : " + help[item]);
     }
@@ -104,6 +108,24 @@ client.addListener('message', function(from, to, message){
       client.say(to, "No etherpad is set.");
     }
   }
+  if (message.search('[!:]helpersShow') === 0){
+    if (testDay) {
+      client.say(to, "Today's helpers: " + helpers.join([separator = ', ']));
+    } else {
+      client.say(to, "There's no Test Day in progress.");
+    }
+  }
+  if (message.search('[!:]helpersSend') === 0){
+    if (testDay) {
+      for (var helper in helpers){
+        client.say(helper, from + " could use some help!");
+      }
+      client.say(to, "Help request sent to " + helpers.join([separator = ', ']) + ".")
+    } else {
+      client.say(to, "There's no Test Day in progress.");
+    }
+  }
+
   if (testDay){
     if (from === 'firebot'){
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
