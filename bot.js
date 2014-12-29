@@ -12,7 +12,7 @@ var ircServer = config.server,
     client = new irc.Client(ircServer, nick, options),
     etherpad = "",
     testDay = false,
-    testDayAdmins = config.testDayAdmins,
+    admins = config.admins,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
@@ -28,7 +28,8 @@ var ircServer = config.server,
              ":bug"  : "Learn how to report a bug",
              ":qmo"  : "Learn about Quality at Mozilla",
              ":sumo" : "Learn about Support at Mozilla",
-             ":etherpad" : "View the Test Day etherpad"
+             ":etherpad" : "View the Test Day etherpad",
+             ":helpers" : "View Test Day helpers, and request help with :helpers request",
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin <nickname>" : "Add a Test Day Admin",
@@ -39,6 +40,8 @@ var ircServer = config.server,
     };
 
 function resetData() {
+  admins = config.admins;
+  helpers = config.helpers;
   lastQuit = {};
   metrics = {
     greetedName: [],
@@ -79,7 +82,7 @@ client.addListener('message', function(from, to, message){
   if (to === nick){ // private message to bot
     to = from;
   }
-  if (message.search('[!:]help') >= 0){
+  if (message.search('[!:]help\\b') >= 0){
     for (var item in help){
       client.say(from, item + " : " + help[item]);
     }
@@ -104,6 +107,24 @@ client.addListener('message', function(from, to, message){
       client.say(to, "No etherpad is set.");
     }
   }
+  if (message.search('[!:]helpers') === 0){
+    var command = message.split(" ");
+    if (testDay) {
+      intro = "Today's helpers: ";
+      switch (command[1]) {
+        case 'request':
+          intro = "Help request sent to ";
+          helpers.forEach(function (helper){
+            client.say(helper, from + " could use some help!");
+          });
+        default:
+          client.say(to, intro + helpers.join([separator = ', ']));
+      }
+    } else {
+      client.say(to, "There's no Test Day in progress.");
+    }
+  }
+
   if (testDay){
     if (from === 'firebot'){
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0){
@@ -127,7 +148,7 @@ client.addListener('message', function(from, to, message){
 client.addListener('pm', function(from, message){ // private messages to bot
   checkTestDay();
   if (message.search(':adminhelp') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
+    if (admins.indexOf(from) >= 0){
       for (var item in adminhelp){
         client.say(from, item + " : " + adminhelp[item]);
       }
@@ -135,22 +156,22 @@ client.addListener('pm', function(from, message){ // private messages to bot
       client.say(from, "sorry! you're not a Test Day admin.");
     }
   } else if (message.search(':addAdmin') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
+    if (admins.indexOf(from) >= 0){
       addTestDayAdmin = message.slice(message.indexOf(" ") + 1);
       client.whois(addTestDayAdmin, function(whoisinfo){
         if (whoisinfo.accountinfo && whoisinfo.accountinfo.search('is logged in as') >= 0){
-          testDayAdmins.push(addTestDayAdmin);
-          client.say(from, 'Test Day admins are now ' + testDayAdmins.toString());
+          admins.push(addTestDayAdmin);
+          client.say(from, 'Test Day admins are now ' + admins.toString());
         } else {
           client.say(from, 'sorry! ' + addTestDayAdmin + ' is not using a registered nick.');
-          client.say(from, 'Test Day admins are still ' + testDayAdmins.toString());
+          client.say(from, 'Test Day admins are still ' + admins.toString());
         }
       });
     } else {
       client.say(from, "sorry! you're not a Test Day admin.");
     }
   } else if (message.search(':addHelper') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
+    if (admins.indexOf(from) >= 0){
       addHelper = message.slice(message.indexOf(" ") + 1);
       helpers.push(addHelper);
       client.say(from, 'test day helpers are now ' + helpers.toString());
@@ -158,7 +179,7 @@ client.addListener('pm', function(from, message){ // private messages to bot
       client.say(from, "sorry! you're not a Test Day admin.");
     }
   } else if (message.search(':stats') === 0){
-    if (testDayAdmins.indexOf(from) >= 0){
+    if (admins.indexOf(from) >= 0){
       var stats = new Stats();
       stats.generateStats(metrics, from);
     } else {
@@ -167,7 +188,7 @@ client.addListener('pm', function(from, message){ // private messages to bot
   }
   if (testDay){
     if (message.search(':stop') === 0){
-      if (testDayAdmins.indexOf(from) >= 0){
+      if (admins.indexOf(from) >= 0){
         testDay = false;
         endTime = Date.now();
         client.say(from, "testDay is now " + testDay.toString());
@@ -177,7 +198,7 @@ client.addListener('pm', function(from, message){ // private messages to bot
     }
   } else {
     if (message.search(':next') === 0){
-      if (testDayAdmins.indexOf(from) >= 0){
+      if (admins.indexOf(from) >= 0){
         args = message.slice(message.indexOf(" ") + 1);
         startTime = new Date(args.slice(0, args.indexOf(" ")));
         args = args.slice(args.indexOf(" ") + 1);
