@@ -6,5 +6,7 @@
     "secure": "true",
     "autoRejoin": "true",
     "admins": ["ashughes", "whimboo"],
-    "helpers": ["ashughes"]
+    "helpers": ["ashughes"],
+    "advertChannels": ["#contributors", "#developers", "#interns", "#introduction", "#mozillians", "#newbies", "#seneca"],
+    "advertMessage": "TODO: default to be determined"
 }
