@@ -16,6 +16,7 @@ var ircServer = config.server,
     testDay = false,
     admins = config.admins,
     helpers = config.helpers,
+    advertisement = config.advertisement,
     startTime = Date.now(),
     endTime = startTime,
     timerID = 0,
@@ -43,6 +44,8 @@ var ircServer = config.server,
                   ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
                   ":stats" : ":stats display Test Day stats",
                   ":stop" : ":stop Test Day early"
+    },
+    helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
 
 function resetData() {
@@ -106,7 +109,20 @@ client.addListener('message', function(from, to, message) {
     for (var item in help) {
       client.say(from, item + " : " + help[item]);
     }
+
+    if (helpers.indexOf(from) >= 0) {
+      for (item in helperhelp) {
+        client.say(from, item + " : " + helperhelp[item]);
+      }
+    }
+
+    if (admins.indexOf(from) >= 0) {
+      for (item in adminhelp) {
+        client.say(from, item + " : " + adminhelp[item]);
+      }
+    }
   }
+
   if (message.search('[!:]bug') >= 0) {
     client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
   }
@@ -192,13 +208,13 @@ client.addListener('message', function(from, to, message) {
 client.addListener('pm', function(from, message) { // private messages to bot
   var command = message.split(" ");
 
-  if (!(command[0] in adminhelp)) {
-    // not an admin command
+  if (!((command[0] in adminhelp) || (command[0] in helperhelp))) {
+    // not a privileged command
     return;
   }
 
-  if (!(admins.indexOf(from) >= 0)) {
-    client.say(from, "Sorry! You're not a Test Day admin.");
+  if (!((admins.indexOf(from) >= 0) || (helpers.indexOf(from) >= 0))) {
+    client.say(from, "Sorry! " + from + " is not a Test Day admin or helper.");
     return;
   }
 
@@ -208,8 +224,25 @@ client.addListener('pm', function(from, message) { // private messages to bot
       return;
     }
 
-    // on the list and logged in; run the admin command
     var cmdLen = command.length;
+
+    // :advertise is the only helper command; run it without further check
+    if (command[0] === ":advertise") {
+      advertisement.channels.forEach(function (aChannel){
+        client.join(aChannel, function() {
+          client.say(aChannel, advertisement.message);
+          client.part(aChannel);
+        });
+      });
+      return;
+    }
+
+    // other privileged commands are admin-only; return if not from admin
+    if (!(admins.indexOf(from) >= 0)) {
+      return;
+    }
+
+    // admin commands
     switch (command[0]) {
       case ":adminhelp":
         for (var item in adminhelp) {
