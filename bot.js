@@ -17,6 +17,7 @@ var ircServer = config.server,
     advertChannels = config.advertChannels,
     advertMessage = config.advertMessage,
     helpers = config.helpers,
+    advertisement = config.advertisement,
     startTime = Date.now(),
     endTime = startTime,
     timerID = 0,
@@ -41,6 +42,7 @@ var ircServer = config.server,
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
                   ":addHelper" : ":addHelper <nickname> as a Test Day helper",
+                  ":advertise" : "Advertise the Test Day in other appropriate channels.",
                   ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
                   ":stats" : ":stats display Test Day stats",
                   ":stop" : ":stop Test Day early"
@@ -232,6 +234,12 @@ client.addListener('pm', function(from, message) { // private messages to bot
         } else {
           helpers.push(command[1]);
           client.say(from, 'Test Day helpers are now ' + admins.join(", "));
+        }
+        break;
+      case ":advertise":
+        advertisementChannelsLength = advertisement.channels.length;
+        for (var i = 0; i < advertisementChannelsLength; i++){
+          client.say(advertisement.channels[i], advertisement.message);
         }
         break;
       case ":stats":
