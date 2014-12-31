@@ -13,7 +13,7 @@ var ircServer = config.server,
     etherpad = "",
     testDay = false,
     testDayAdmins = config.testDayAdmins,
-    helpers = testDayAdmins,
+    helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
     lastQuit = {},
@@ -29,8 +29,7 @@ var ircServer = config.server,
              ":qmo"  : "Learn about Quality at Mozilla",
              ":sumo" : "Learn about Support at Mozilla",
              ":etherpad" : "View the Test Day etherpad",
-             ":helpersShow" : "View Test Day helpers",
-             ":helpersSend" : "Send a help request to Test Day helpers"
+             ":helpers" : "View Test Day helpers, and request help with :helpers request",
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin <nickname>" : "Add a Test Day Admin",
@@ -42,7 +41,7 @@ var ircServer = config.server,
 
 function resetData() {
   testDayAdmins = config.testDayAdmins;
-  helpers = testDayAdmins;
+  helpers = config.helpers;
   lastQuit = {};
   metrics = {
     greetedName: [],
@@ -108,19 +107,16 @@ client.addListener('message', function(from, to, message){
       client.say(to, "No etherpad is set.");
     }
   }
-  if (message.search('[!:]helpersShow') === 0){
+  if (message.search('[!:]helpers') === 0){
     if (testDay) {
       client.say(to, "Today's helpers: " + helpers.join([separator = ', ']));
-    } else {
-      client.say(to, "There's no Test Day in progress.");
-    }
-  }
-  if (message.search('[!:]helpersSend') === 0){
-    if (testDay) {
-      for (var helper in helpers){
-        client.say(helper, from + " could use some help!");
+      if (message.indexOf('request') === 9) {
+        helpersLength = helpers.length;
+        for (var i = 0; i < helpersLength; i++){
+          client.say(helpers[i], from + " could use some help!");
+        }
+        client.say(to, "Help request sent!");
       }
-      client.say(to, "Help request sent to " + helpers.join([separator = ', ']) + ".")
     } else {
       client.say(to, "There's no Test Day in progress.");
     }
