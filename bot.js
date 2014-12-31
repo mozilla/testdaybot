@@ -10,6 +10,7 @@ var ircServer = config.server,
       autoRejoin: config.autoRejoin,
     },
     client = new irc.Client(ircServer, nick, options),
+    botChannel = config.channels[0],
     etherpad = "",
     testDay = false,
     admins = config.admins,
@@ -17,8 +18,7 @@ var ircServer = config.server,
     startTime = Date.now(),
     endTime = startTime,
     topic = "",
-    qaTopic = "",
-    qaChannel = config.channels[0],
+    topic_backup = "",
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -64,20 +64,20 @@ function checkTestDay() {
   if (testDay) {
     if (Date.now() > endTime) {
       testDay = false;
-      client.send('TOPIC', qaChannel, qaTopic);
+      client.send('TOPIC', botChannel, topic_backup);
     }
   } else {
     if ((Date.now() < endTime) && (Date.now() > startTime)) {
       testDay = true;
       resetData();
-      client.send('TOPIC', qaChannel, topic);
+      client.send('TOPIC', botChannel, topic);
     }
   }
 }
 
 client.addListener('topic', function (channel, channelTopic, nick) {
-  if (!testDay && (channel === qaChannel)) {
-    qaTopic = channelTopic; // save a non-Test Day topic to restore after Test Day
+  if (!testDay && (channel === botChannel)) {
+    topic_backup = channelTopic; // save a non-Test Day topic to restore after Test Day
   }
 });
 
