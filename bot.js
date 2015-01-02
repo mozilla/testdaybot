@@ -49,6 +49,10 @@ function resetData() {
     firebotBugs:[],
     usersTalked: {},
     hourUTC: {},
+    start: startTime,
+    end: endTime,
+    etherpad: etherpad,
+    topic: topic,
   };
 }
 
@@ -247,8 +251,6 @@ client.addListener('error', function(message) {
 var Stats = function() {};
 
 Stats.prototype.generateStats = function(metrcs, from) {
-  metrcs.testday = etherpad;
-
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
   for (var i = 0; i < keys.length; i++) {
