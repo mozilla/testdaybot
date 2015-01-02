@@ -49,8 +49,8 @@ function resetData() {
     firebotBugs:[],
     usersTalked: {},
     hourUTC: {},
-    start: startTime,
-    end: endTime,
+    start: startTime.toUTCString(),
+    end: endTime.toUTCString(),
     etherpad: etherpad,
     topic: topic,
   };
