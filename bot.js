@@ -30,6 +30,7 @@ var ircServer = config.server,
              ":sumo" : "Learn about Support at Mozilla",
              ":etherpad" : "View the Test Day etherpad",
              ":helpers" : "View Test Day helpers, and request help with :helpers request",
+             ":schedule" : "View the Test Day schedule"
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
@@ -78,7 +79,9 @@ client.addListener('join', function(channel, who) {
 });
 
 client.addListener('message', function(from, to, message) {
+  var intro;
   checkTestDay();
+
   if (to === nick) { // private message to bot
     to = from;
   }
@@ -123,6 +126,30 @@ client.addListener('message', function(from, to, message) {
     } else {
       client.say(to, "There's no Test Day in progress.");
     }
+  }
+
+  if (message.search('[!:]schedule') >= 0) {
+    var scheduleTimes = "";
+
+    // bot just started, nothing's happened, nothing's scheduled
+    if (endTime === startTime) {
+      intro = "No Test Day has been scheduled.";
+    } else {
+      // default to past Test Day
+      intro = "No Test Day is currently scheduled. Last";
+      scheduleTimes = " Test Day: " + startTime.toUTCString() + " till " +
+                      endTime.toUTCString();
+    }
+
+    // if today is a Test Day
+    if (testDay) {
+      intro = "This";
+    // else if a future Test Day is scheduled
+    } else if (startTime > Date.now()) {
+      intro = "Next";
+    }
+
+    client.say(to, intro + scheduleTimes);
   }
 
   if (testDay) {
