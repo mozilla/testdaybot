@@ -14,8 +14,6 @@ var ircServer = config.server,
     etherpad = "",
     testDay = false,
     admins = config.admins,
-    advertChannels = config.advertChannels,
-    advertMessage = config.advertMessage,
     helpers = config.helpers,
     advertisement = config.advertisement,
     startTime = Date.now(),
@@ -227,6 +225,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
           admins.push(command[1]);
           client.say(from, 'Test Day admins are now ' + admins.join(", "));
         }
+<<<<<<< HEAD
         break;
       case ":addHelper":
         if (cmdLen != 2) {
@@ -237,10 +236,9 @@ client.addListener('pm', function(from, message) { // private messages to bot
         }
         break;
       case ":advertise":
-        advertisementChannelsLength = advertisement.channels.length;
-        for (var i = 0; i < advertisementChannelsLength; i++){
-          client.say(advertisement.channels[i], advertisement.message);
-        }
+        advertisement.channels.forEach(function (channel){
+          client.say(channel, advertisement.message);
+        });
         break;
       case ":stats":
         var stats = new Stats();
