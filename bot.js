@@ -12,7 +12,7 @@ var ircServer = config.server,
     client = new irc.Client(ircServer, nick, options),
     etherpad = "",
     testDay = false,
-    testDayAdmins = config.testDayAdmins,
+    testDayAdmins = config.admins,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
@@ -40,7 +40,7 @@ var ircServer = config.server,
     };
 
 function resetData() {
-  testDayAdmins = config.testDayAdmins;
+  testDayAdmins = config.admins;
   helpers = config.helpers;
   lastQuit = {};
   metrics = {
@@ -108,14 +108,17 @@ client.addListener('message', function(from, to, message){
     }
   }
   if (message.search('[!:]helpers') === 0){
+    var command = message.split(" ");
     if (testDay) {
-      client.say(to, "Today's helpers: " + helpers.join([separator = ', ']));
-      if (message.indexOf('request') === 9) {
-        helpersLength = helpers.length;
-        for (var i = 0; i < helpersLength; i++){
-          client.say(helpers[i], from + " could use some help!");
-        }
-        client.say(to, "Help request sent!");
+      intro = "Today's helpers: ";
+      switch (command[1]) {
+        case 'request':
+          intro = "Help request sent to ";
+          helpers.forEach(function (helper){
+            client.say(helper, from + " could use some help!");
+          });
+        default:
+          client.say(to, intro + helpers.join([separator = ', ']));
       }
     } else {
       client.say(to, "There's no Test Day in progress.");
