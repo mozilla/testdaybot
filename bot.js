@@ -61,30 +61,33 @@ function resetData() {
   };
 }
 
-function checkTestDay() {
+function updateTestDayData() {
   if (testDay) {
     testDay = false;
     client.send('TOPIC', channel, topic_backup);
-    timerID = 0;
+    if (timerID !== 0) {
+      clearTimeout(timerID);
+      timerID = 0;
+    }
   } else {
     testDay = true;
     resetData();
     client.send('TOPIC', channel, topic);
-    timerID = setTimeout(checkTestDay, endTime - Date.now());
+    timerID = setTimeout(updateTestDayData, endTime - Date.now());
   }
 }
 
-client.addListener('topic', function (channl, channlTopic, nick) {
-  if (!testDay && (channl === channel)) {
+client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
+  if (!testDay && (aChannel === channel)){
     // save a non-Test Day topic to restore after Test Day
-    topic_backup = channlTopic;
+    topic_backup = aChannelTopic;
   }
 });
 
-client.addListener('join', function(channl, who) {
-  if (testDay) { // record stats only on test days
-    if (who !== nick) {
-      if (!lastQuit[who]) {
+client.addListener('join', function(aChannel, who){
+  if (testDay){ // record stats only on test days
+    if (who !== nick){
+      if (!lastQuit[who]){
         metrics.greetedName.push(who);
         metrics.greetedNumber +=1;
       }
@@ -235,8 +238,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
         break;
       case ":stop":
         if (testDay) {
-          clearTimeout(timerID);
-          checkTestDay();
+          updateTestDayData();
           client.say(from, "Test Day stopped.");
         } else {
           client.say(from, "No Test Day is in progress.");
@@ -262,7 +264,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
               client.say(from, "Next Test Day's etherpad is " + etherpad);
               client.say(from, "Next Test Day's topic is " + topic);
             } else {
-              client.say(from, "Oops! Invalid date.");
+              client.say(from, "Please use valid dates.");
             }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
@@ -275,14 +277,14 @@ client.addListener('pm', function(from, message) { // private messages to bot
   });
 });
 
-client.addListener('quit', function(who, reason, channl) {
-  if (testDay) {
+client.addListener('quit', function(who, reason, aChannel){
+  if (testDay){
     lastQuit[who] = Date.now();
   }
 });
 
-client.addListener('part', function(channl, who, reason) {
-  if (testDay) {
+client.addListener('part', function(aChannel, who, reason){
+  if (testDay){
     lastQuit[who] = Date.now();
   }
 });
