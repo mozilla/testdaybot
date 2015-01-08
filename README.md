@@ -1,6 +1,6 @@
 # Test Day Bot
 
-This is an IRC bot that supports Mozilla Test Days.
+This is an IRC bot that supports Mozilla QA Test Days.
 
 To run this, you will need to have node.js installed.
 
