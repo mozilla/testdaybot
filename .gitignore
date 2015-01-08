@@ -1,4 +1,3 @@
 *.swp
 .DS_Store
-config.json.test
-config.json.qa
+
