@@ -16,7 +16,6 @@ var ircServer = config.server,
     helpers = config.helpers,
     startTime = Date.now(),
     endTime = startTime,
-    intro = "",
     lastQuit = {},
     metrics = {
       greetedName: [],
@@ -80,7 +79,9 @@ client.addListener('join', function(channel, who) {
 });
 
 client.addListener('message', function(from, to, message) {
+  var intro;
   checkTestDay();
+
   if (to === nick) { // private message to bot
     to = from;
   }
@@ -128,10 +129,11 @@ client.addListener('message', function(from, to, message) {
   }
 
   if (message.search('[!:]schedule') >= 0) {
+    var scheduleTimes = "";
+
     // bot just started, nothing's happened, nothing's scheduled
     if (endTime === startTime) {
       intro = "No Test Day has been scheduled.";
-      var scheduleTimes = "";
     } else {
       // default to past Test Day
       intro = "No Test Day is currently scheduled. Last";
