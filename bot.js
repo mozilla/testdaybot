@@ -86,11 +86,6 @@ client.addListener('message', function(from, to, message) {
     for (var item in help) {
       client.say(from, item + " : " + help[item]);
     }
-    if (testDayAdmins.indexOf(from) >= 0){ // if help requester is bot admin, show admin commands, too
-      for (var item in adminhelp){
-        client.say(from, item + " : " + adminhelp[item]);
-      }
-    }
   }
   if (message.search('[!:]bug') >= 0) {
     client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");

@@ -6,7 +6,7 @@ To run this, you will need to have node.js installed.
 
 ## How to run
 
-``` javascript
+``` bash
     node bot.js
 ```
 
