@@ -40,10 +40,11 @@ var ircServer = config.server,
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
                   ":addHelper" : ":addHelper <nickname> as a Test Day helper",
-                  ":advertise" : "Advertise the Test Day in other appropriate channels.",
                   ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
                   ":stats" : ":stats display Test Day stats",
                   ":stop" : ":stop Test Day early"
+    },
+    helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
 
 function resetData() {
@@ -107,7 +108,20 @@ client.addListener('message', function(from, to, message) {
     for (var item in help) {
       client.say(from, item + " : " + help[item]);
     }
+
+    if (helpers.indexOf(from) >= 0) {
+      for (item in helperhelp) {
+        client.say(from, item + " : " + helperhelp[item]);
+      }
+    }
+
+    if (admins.indexOf(from) >= 0) {
+      for (item in adminhelp) {
+        client.say(from, item + " : " + adminhelp[item]);
+      }
+    }
   }
+
   if (message.search('[!:]bug') >= 0) {
     client.say(to, "You can find details on how to raise a bug at https://developer.mozilla.org/en/Bug_writing_guidelines");
   }
@@ -191,16 +205,15 @@ client.addListener('message', function(from, to, message) {
 });
 
 client.addListener('pm', function(from, message) { // private messages to bot
-  checkTestDay();
   var command = message.split(" ");
 
-  if (!(command[0] in adminhelp)) {
-    // not an admin command
+  if (!((command[0] in adminhelp) || (command[0] in helperhelp))) {
+    // not a privileged command
     return;
   }
 
-  if (!(admins.indexOf(from) >= 0)) {
-    client.say(from, "Sorry! You're not a Test Day admin.");
+  if (!((admins.indexOf(from) >= 0) || (helpers.indexOf(from) >= 0))) {
+    client.say(from, "Sorry! " + from + " is not a Test Day admin or helper.");
     return;
   }
 
@@ -210,8 +223,30 @@ client.addListener('pm', function(from, message) { // private messages to bot
       return;
     }
 
-    // on the list and logged in; run the admin command
     var cmdLen = command.length;
+
+    // :advertise is the only helper command; run it without further check
+    if (command[0] === ":advertise") {
+      advertisement.channels.forEach(function (aChannel){
+        console.log("forEach aChannel is " + aChannel);
+        client.join(aChannel, function(aNick, anArg) {
+          console.log("aNick is " + aNick + " and anArg is " + anArg);
+          // client.say(aChannel, advertisement.message);
+          client.part(aChannel);
+        });
+      });
+      client.whois('badnick', function(whoisinfo) {
+        console.log("did I get here?");
+      });
+      return;
+    }
+
+    // other privileged commands are admin-only; return if not from admin
+    if (!(admins.indexOf(from) >= 0)) {
+      return;
+    }
+
+    // admin commands
     switch (command[0]) {
       case ":adminhelp":
         for (var item in adminhelp) {
@@ -225,7 +260,6 @@ client.addListener('pm', function(from, message) { // private messages to bot
           admins.push(command[1]);
           client.say(from, 'Test Day admins are now ' + admins.join(", "));
         }
-<<<<<<< HEAD
         break;
       case ":addHelper":
         if (cmdLen != 2) {
@@ -234,11 +268,6 @@ client.addListener('pm', function(from, message) { // private messages to bot
           helpers.push(command[1]);
           client.say(from, 'Test Day helpers are now ' + admins.join(", "));
         }
-        break;
-      case ":advertise":
-        advertisement.channels.forEach(function (channel){
-          client.say(channel, advertisement.message);
-        });
         break;
       case ":stats":
         var stats = new Stats();
@@ -266,7 +295,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
-              timerID = setTimeout(checkTestDay, startTime - Date.now());
+              timerID = setTimeout(updateTestDayData, startTime - Date.now());
               client.say(from, "Next Test Day's start is " + startTime);
               client.say(from, "Next Test Day's end is " + endTime);
               client.say(from, "Next Test Day's etherpad is " + etherpad);
