@@ -190,7 +190,6 @@ client.addListener('message', function(from, to, message) {
 });
 
 client.addListener('pm', function(from, message) { // private messages to bot
-  checkTestDay();
   var command = message.split(" ");
 
   if (!(command[0] in adminhelp)) {
@@ -259,7 +258,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
-              timerID = setTimeout(checkTestDay, startTime - Date.now());
+              timerID = setTimeout(updateTestDayData, startTime - Date.now());
               client.say(from, "Next Test Day's start is " + startTime);
               client.say(from, "Next Test Day's end is " + endTime);
               client.say(from, "Next Test Day's etherpad is " + etherpad);
