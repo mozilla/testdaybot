@@ -8,6 +8,7 @@ var ircServer = config.server,
     options = {
       channels: config.channels,
       autoRejoin: config.autoRejoin,
+      floodProtection: false
     },
     client = new irc.Client(ircServer, nick, options),
     channel = config.channels[0],
