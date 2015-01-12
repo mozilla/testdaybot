@@ -1,17 +1,29 @@
 {
-    "channels"      : ["#testdaybotTest"],
-    "server"        : "irc.mozilla.org",
-    "port"          : "6697",
-    "nick"          : "_TestDayBot",
-    "secure"        : "true",
-    "autoRejoin"    : "true",
-    "admins"        : ["ashughes", "whimboo", "galgeek", "bara"],
-    "helpers"       : ["ashughes", "galgeek", "bara"],
-    "advertisement" : {
-                       "channels" : ["#automation",
-                                    "#ascend",
-                                    "#testdaybotTest"
-                                   ],
-                      "message"   : "This is a wee test of an update to testdaybot. Please excuse the interruption! "
-                     }
+    "channels":[
+        "#qa"
+    ],
+    "server":"irc.mozilla.org",
+    "port":"6697",
+    "nick":"_TestDayBot",
+    "secure":"true",
+    "autoRejoin":"true",
+    "admins":[
+        "ashughes",
+        "whimboo"
+    ],
+    "helpers":[
+        "ashughes"
+    ],
+    "advertisement":{
+        "channels":[
+            "#contributors",
+            "#developers",
+            "#interns",
+            "#introduction",
+            "#mozillians",
+            "#newbies",
+            "#seneca"
+        ],
+        "message":"Mozilla QA is holding a Test Day today. Interested in participating? Please join us in #qa!"
+    }
 }

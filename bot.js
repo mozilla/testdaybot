@@ -228,15 +228,10 @@ client.addListener('pm', function(from, message) { // private messages to bot
     // :advertise is the only helper command; run it without further check
     if (command[0] === ":advertise") {
       advertisement.channels.forEach(function (aChannel){
-        console.log("forEach aChannel is " + aChannel);
-        client.join(aChannel, function(aNick, anArg) {
-          console.log("aNick is " + aNick + " and anArg is " + anArg);
-          // client.say(aChannel, advertisement.message);
+        client.join(aChannel, function() {
+          client.say(aChannel, advertisement.message);
           client.part(aChannel);
         });
-      });
-      client.whois('badnick', function(whoisinfo) {
-        console.log("did I get here?");
       });
       return;
     }
