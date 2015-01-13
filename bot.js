@@ -22,7 +22,7 @@ var ircServer = config.server,
     timerID = 0,
     topic = "",
     topic_backup = "",
-    optOut = {},
+    optOut = [],
     lastQuit = {},
     metrics = {
       firebotBugs:[],
@@ -176,8 +176,8 @@ client.addListener('message', function(from, to, message) {
   }
 
   if (message.search('[!:]optout') === 0) {
-    if (!(from in optOut)) {
-      optOut[from] = null;
+    if (optOut.indexOf(from) === -1) {
+      optOut.push(from);
       metrics.optOutTotal += 1;
       if (from in metrics.activeUsers) {
         delete metrics.activeUsers[from];
@@ -188,8 +188,8 @@ client.addListener('message', function(from, to, message) {
   }
 
   if (message.search('[!:]optin') === 0) {
-    if (from in optOut) {
-      delete optOut[from];
+    if (optOut.indexOf(from) >= 0) {
+      optOut.splice(optOut.indexOf(from), 1);
       // on Test Days, add to metrics to avoid second(?) opt out notice
       if (testDay) {
         metrics.activeUsers[from] = 0;
@@ -207,7 +207,7 @@ client.addListener('message', function(from, to, message) {
     }
 
     // if from is not on the opt out list
-    if (!(from in optOut)) {
+    if (optOut.indexOf(from) === -1) {
       if (from in metrics.activeUsers) {
         metrics.activeUsers[from] += 1;
       } else {
