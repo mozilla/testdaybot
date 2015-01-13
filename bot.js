@@ -23,12 +23,12 @@ var ircServer = config.server,
     topic = "",
     topic_backup = "",
     optOut = {},
-    optOutTotal = 0,
     lastQuit = {},
     metrics = {
       firebotBugs:[],
       activeUsers: {},
       hourUTC: {},
+      optOutTotal: 0,
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -52,12 +52,12 @@ var ircServer = config.server,
 function resetData() {
   admins = config.admins;
   helpers = config.helpers;
-  optOutTotal = 0;
   lastQuit = {};
   metrics = {
     firebotBugs:[],
     activeUsers: {},
     hourUTC: {},
+    optOutTotal: 0,
     start: startTime.toUTCString(),
     end: endTime.toUTCString(),
     etherpad: etherpad,
@@ -177,7 +177,7 @@ client.addListener('message', function(from, to, message) {
   if (message.search('[!:]optout') === 0) {
     if (!(from in optOut)) {
       optOut[from] = null;
-      optOutTotal += 1;
+      metrics.optOutTotal += 1;
       if (from in metrics.activeUsers) {
         delete metrics.activeUsers[from];
       }
@@ -350,7 +350,6 @@ Stats.prototype.generateStats = function(metrcs, from) {
         for (var t = 0; t < speakersTotal; t++) {
           client.say(from, speakers[t] + ": " + metrcs.activeUsers[speakers[t]]);
         }
-        client.say(from, "This Test Day " + optOutTotal + " people opted out of data collection.");
       } else if (keys[i] == "hourUTC") {
         client.say(from, "The following hours (UTC) were active in the channel: ");
         var speakers = Object.keys(metrcs.hourUTC);
