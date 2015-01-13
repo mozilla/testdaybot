@@ -37,7 +37,8 @@ var ircServer = config.server,
              ":etherpad" : "View the Test Day etherpad",
              ":helpers" : "View Test Day helpers, and request help with :helpers request",
              ":schedule" : "View the Test Day schedule",
-             ":optout"   : "Opt out from Test Day data collection for your nick"
+             ":optout"   : "Opt out from Test Day data collection for your nick",
+             ":optin"    : "Opt in (default) to Test Day data collection for your nick"
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
@@ -183,7 +184,19 @@ client.addListener('message', function(from, to, message) {
       }
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
-    "for your nick " + from + ".");
+               "for your nick " + from + ".");
+  }
+
+  if (message.search('[!:]optin') === 0) {
+    if (from in optOut) {
+      delete optOut[from];
+      // on Test Days, add to metrics to avoid second(?) opt out notice
+      if (testDay) {
+        metrics.activeUsers[from] = 0;
+      }
+    }
+    client.say(from, "You’re opted in to Test Day data collection " +
+               "for your nick " + from + ".");
   }
 
   if (testDay) {
@@ -199,8 +212,8 @@ client.addListener('message', function(from, to, message) {
         metrics.activeUsers[from] += 1;
       } else {
         client.say(from, "Welcome to today’s Test Day, " + from + "!");
-          client.say(from, "To opt out of data collection, use the command :optout.");
-          metrics.activeUsers[from] = 1;
+        client.say(from, "To opt out of data collection, use the command :optout.");
+        metrics.activeUsers[from] = 1;
       }
     }
 
