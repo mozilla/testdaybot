@@ -22,12 +22,12 @@ var ircServer = config.server,
     timerID = 0,
     topic = "",
     topic_backup = "",
+    optOut = {},
+    optOutTotal = 0,
     lastQuit = {},
     metrics = {
-      greetedName: [],
-      greetedNumber: 0,
       firebotBugs:[],
-      usersTalked: {},
+      activeUsers: {},
       hourUTC: {},
     },
     help = { ":help" : "This is Help! :)",
@@ -36,7 +36,8 @@ var ircServer = config.server,
              ":sumo" : "Learn about Support at Mozilla",
              ":etherpad" : "View the Test Day etherpad",
              ":helpers" : "View Test Day helpers, and request help with :helpers request",
-             ":schedule" : "View the Test Day schedule"
+             ":schedule" : "View the Test Day schedule",
+             ":optout"   : "Opt out from Test Day data collection for your nick"
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
@@ -51,12 +52,11 @@ var ircServer = config.server,
 function resetData() {
   admins = config.admins;
   helpers = config.helpers;
+  optOutTotal = 0;
   lastQuit = {};
   metrics = {
-    greetedName: [],
-    greetedNumber: 0,
     firebotBugs:[],
-    usersTalked: {},
+    activeUsers: {},
     hourUTC: {},
     start: startTime.toUTCString(),
     end: endTime.toUTCString(),
@@ -85,17 +85,6 @@ client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
   if (!testDay && (aChannel === channel)){
     // save a non-Test Day topic to restore after Test Day
     topic_backup = aChannelTopic;
-  }
-});
-
-client.addListener('join', function(aChannel, who){
-  if (testDay){ // record stats only on test days
-    if (who !== nick){
-      if (!lastQuit[who]){
-        metrics.greetedName.push(who);
-        metrics.greetedNumber +=1;
-      }
-    }
   }
 });
 
@@ -185,17 +174,36 @@ client.addListener('message', function(from, to, message) {
     client.say(to, intro + scheduleTimes);
   }
 
+  if (message.search('[!:]optout') === 0) {
+    if (!(from in optOut)) {
+      optOut[from] = null;
+      optOutTotal += 1;
+      if (from in metrics.activeUsers) {
+        delete metrics.activeUsers[from];
+      }
+    }
+    client.say(from, "You’ve opted out of Test Day data collection " +
+    "for your nick " + from + ".");
+  }
+
   if (testDay) {
     if (from === 'firebot') {
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0) {
         metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
       }
     }
-    if (from in metrics.usersTalked) {
-      metrics.usersTalked[from] += 1;
-    } else {
-      metrics.usersTalked[from] = 1;
+
+    // if from is not on the opt out list
+    if (!(from in optOut)) {
+      if (from in metrics.activeUsers) {
+        metrics.activeUsers[from] += 1;
+      } else {
+        client.say(from, "Welcome to today’s Test Day, " + from + "!");
+          client.say(from, "To opt out of data collection, use the command :optout.");
+          metrics.activeUsers[from] = 1;
+      }
     }
+
     var nowHour = new Date().getUTCHours().toString();
     if (nowHour in metrics.hourUTC) {
       metrics.hourUTC[nowHour] += 1;
@@ -335,12 +343,14 @@ Stats.prototype.generateStats = function(metrcs, from) {
     if (what.call(metrcs[keys[i]]).search('Array') > 0) {
       client.say(from, keys[i] + ":  " + metrcs[keys[i]].join(", "));
     } else {
-      if (keys[i] == "usersTalked") {
-        client.say(from, "The following people were active in the channel: ");
-        var speakers = Object.keys(metrcs.usersTalked);
-        for (var t = 0; t < speakers.length; t++) {
-          client.say(from, speakers[t] + ": " + metrcs.usersTalked[speakers[t]]);
+      if (keys[i] == "activeUsers") {
+        var speakers = Object.keys(metrcs.activeUsers);
+        var speakersTotal = speakers.length;
+        client.say(from, "The following " + speakersTotal + " people were active in the channel: ");
+        for (var t = 0; t < speakersTotal; t++) {
+          client.say(from, speakers[t] + ": " + metrcs.activeUsers[speakers[t]]);
         }
+        client.say(from, "This Test Day " + optOutTotal + " people opted out of data collection.");
       } else if (keys[i] == "hourUTC") {
         client.say(from, "The following hours (UTC) were active in the channel: ");
         var speakers = Object.keys(metrcs.hourUTC);
