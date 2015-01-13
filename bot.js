@@ -23,7 +23,6 @@ var ircServer = config.server,
     topic = "",
     topic_backup = "",
     optOut = [],
-    lastQuit = {},
     metrics = {
       firebotBugs:[],
       activeUsers: {},
@@ -53,7 +52,6 @@ var ircServer = config.server,
 function resetData() {
   admins = config.admins;
   helpers = config.helpers;
-  lastQuit = {};
   metrics = {
     firebotBugs:[],
     activeUsers: {},
@@ -329,18 +327,6 @@ client.addListener('pm', function(from, message) { // private messages to bot
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
   });
-});
-
-client.addListener('quit', function(who, reason, aChannel){
-  if (testDay){
-    lastQuit[who] = Date.now();
-  }
-});
-
-client.addListener('part', function(aChannel, who, reason){
-  if (testDay){
-    lastQuit[who] = Date.now();
-  }
 });
 
 client.addListener('error', function(message) {
