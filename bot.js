@@ -1,6 +1,6 @@
 // Requires
 var irc = require('irc'),
-    http = require('http'),
+    fs = require('fs'),
     config = require("./config");
 
 var ircServer = config.server,
@@ -48,6 +48,8 @@ var ircServer = config.server,
     },
     helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
+
+readData("optout");
 
 function resetData() {
   admins = config.admins;
@@ -361,3 +363,54 @@ Stats.prototype.generateStats = function(metrcs, from) {
     }
   }
 };
+
+function saveData(datastore) {
+  var filename,
+      data;
+
+  switch (datastore) {
+    case ("optout"):
+      filename = "./data/optout.txt";
+      data = optOut.toString();
+      break;
+    default:
+      console.log("Unable to store " + datastore);
+      return;
+  }
+  fs.writeFile(filename, data, function(err){
+    if (err) {
+      console.log("Failed to write " + filename);
+    }
+  });
+}
+
+function readData(datastore) {
+  var filename,
+  data;
+
+  switch (datastore) {
+    case ("optout"):
+      filename = "./data/optout.txt";
+      break;
+    default:
+      console.log("Unable to read " + datastore);
+      return;
+  }
+  fs.readFile(filename, "utf8", function(err, data){
+    if (err) {
+      console.log("Error reading " + datastore + " datastore; " +
+                  "using default values.");
+    } else {
+      switch (datastore) {
+        case ("optout"):
+          if (data.length === 0) {
+            optOut = [];
+          } else {
+            optOut = data.split(",");
+          }
+          break;
+        default:
+      }
+    }
+  });
+}
