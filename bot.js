@@ -49,6 +49,7 @@ var ircServer = config.server,
     helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
 
+readData("schedule");
 readData("optout");
 
 function resetData() {
@@ -317,6 +318,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
               client.say(from, "Next Test Day's end is " + endTime);
               client.say(from, "Next Test Day's etherpad is " + etherpad);
               client.say(from, "Next Test Day's topic is " + topic);
+              saveData("schedule");
             } else {
               client.say(from, "Please use valid dates.");
             }
@@ -373,6 +375,10 @@ function saveData(datastore) {
       filename = "./data/optout.txt";
       data = optOut.toString();
       break;
+    case ("schedule"):
+      filename = "./data/schedule.txt";
+      data = startTime + "," + endTime + "," + etherpad + "," + topic;
+      break;
     default:
       console.log("Unable to store " + datastore);
       return;
@@ -392,6 +398,9 @@ function readData(datastore) {
     case ("optout"):
       filename = "./data/optout.txt";
       break;
+    case ("schedule"):
+      filename = "./data/schedule.txt";
+      break;
     default:
       console.log("Unable to read " + datastore);
       return;
@@ -407,6 +416,17 @@ function readData(datastore) {
             optOut = [];
           } else {
             optOut = data.split(",");
+          }
+          break;
+        case ("schedule"):
+          schedule = data.split(",");
+          var start = new Date(schedule.shift());
+          // process saved schedule data only for a future test date
+          if (start > Date.now()) {
+            startTime = start;
+            endTime = new Date(schedule.shift());
+            etherpad = schedule.shift();
+            topic = schedule;
           }
           break;
         default:
