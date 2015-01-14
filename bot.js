@@ -1,6 +1,6 @@
 // Requires
 var irc = require('irc'),
-    http = require('http'),
+    fs = require('fs'),
     config = require("./config");
 
 var ircServer = config.server,
@@ -11,23 +11,27 @@ var ircServer = config.server,
       floodProtection: false
     },
     client = new irc.Client(ircServer, nick, options),
-    channel = config.channels[0],
-    etherpad = "",
-    testDay = false,
-    admins = config.admins,
-    helpers = config.helpers,
-    advertisement = config.advertisement,
-    startTime = Date.now(),
-    endTime = startTime,
+    testDay = {
+      active: false,
+      channel: config.channels[0],
+      admins: config.admins,
+      helpers: config.helpers,
+      start: new Date(),
+      end: new Date(2000),
+      etherpad: "",
+      topic: "",
+      topic_backup: "",
+      advertisement: config.advertisement
+    },
     timerID = 0,
-    topic = "",
-    topic_backup = "",
     optOut = [],
     metrics = {
-      firebotBugs:[],
+      firebotBugs: [],
       activeUsers: {},
       hourUTC: {},
       optOutTotal: 0,
+      start: new Date(2000),
+      end: new Date(2000)
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -50,40 +54,49 @@ var ircServer = config.server,
     };
 
 function resetData() {
-  admins = config.admins;
-  helpers = config.helpers;
+  testDay.admins = config.admins;
+  testDay.helpers = config.helpers;
   metrics = {
     firebotBugs:[],
     activeUsers: {},
     hourUTC: {},
     optOutTotal: 0,
-    start: startTime.toUTCString(),
-    end: endTime.toUTCString(),
-    etherpad: etherpad,
-    topic: topic,
+    start: new Date(testDay.start),
+    end: new Date(testDay.end),
+    etherpad: testDay.etherpad,
+    topic: testDay.topic
   };
+
+  saveData("metrics", JSON.stringify(metrics));
 }
 
 function updateTestDayData() {
-  if (testDay) {
-    testDay = false;
-    client.send('TOPIC', channel, topic_backup);
+  if (testDay.end < Date.now()) {
+    testDay.active = false;
+    client.send('TOPIC', testDay.channel, testDay.topic_backup);
     if (timerID !== 0) {
       clearTimeout(timerID);
       timerID = 0;
     }
   } else {
-    testDay = true;
-    resetData();
-    client.send('TOPIC', channel, topic);
-    timerID = setTimeout(updateTestDayData, endTime - Date.now());
+    testDay.active = true;
+    client.send('TOPIC', testDay.channel, testDay.topic);
+    timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
+    // if starting a new test day, not restarting
+    if (testDay.start > metrics.start) {
+      resetData();
+    }
   }
+
+  saveData("testDay", JSON.stringify(testDay));
 }
 
+restoreTestDayData();
+
 client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
-  if (!testDay && (aChannel === channel)){
+  if (!testDay.active && (aChannel === testDay.channel)) {
     // save a non-Test Day topic to restore after Test Day
-    topic_backup = aChannelTopic;
+    testDay.topic_backup = aChannelTopic;
   }
 });
 
@@ -98,13 +111,13 @@ client.addListener('message', function(from, to, message) {
       client.say(from, item + " : " + help[item]);
     }
 
-    if (helpers.indexOf(from) >= 0) {
+    if (testDay.helpers.indexOf(from) >= 0) {
       for (item in helperhelp) {
         client.say(from, item + " : " + helperhelp[item]);
       }
     }
 
-    if (admins.indexOf(from) >= 0) {
+    if (testDay.admins.indexOf(from) >= 0) {
       for (item in adminhelp) {
         client.say(from, item + " : " + adminhelp[item]);
       }
@@ -121,11 +134,11 @@ client.addListener('message', function(from, to, message) {
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
   if (message.search('[!:]etherpad') >= 0) {
-    if (etherpad) {
-      if (testDay) {
-        client.say(to, "Today's etherpad is " + etherpad);
+    if (testDay.etherpad) {
+      if (testDay.active) {
+        client.say(to, "Today's etherpad is " + testDay.etherpad);
       } else {
-        client.say(to, "Next Test Day's etherpad is " + etherpad);
+        client.say(to, "Next Test Day's etherpad is " + testDay.etherpad);
       }
     } else {
       client.say(to, "No etherpad is set.");
@@ -133,16 +146,16 @@ client.addListener('message', function(from, to, message) {
   }
   if (message.search('[!:]helpers') === 0) {
     var command = message.split(" ");
-    if (testDay) {
+    if (testDay.active) {
       intro = "Today's helpers: ";
       switch (command[1]) {
         case 'request':
           intro = "Help request sent to ";
-          helpers.forEach(function (helper) {
+          testDay.helpers.forEach(function (helper) {
             client.say(helper, from + " could use some help!");
           });
         default:
-          client.say(to, intro + helpers.join([separator = ', ']));
+          client.say(to, intro + testDay.helpers.join([separator = ', ']));
       }
     } else {
       client.say(to, "There's no Test Day in progress.");
@@ -153,20 +166,20 @@ client.addListener('message', function(from, to, message) {
     var scheduleTimes = "";
 
     // bot just started, nothing's happened, nothing's scheduled
-    if (endTime === startTime) {
+    if (testDay.start > testDay.end) {
       intro = "No Test Day has been scheduled.";
     } else {
       // default to past Test Day
       intro = "No Test Day is currently scheduled. Last";
-      scheduleTimes = " Test Day: " + startTime.toUTCString() + " till " +
-                      endTime.toUTCString();
+      scheduleTimes = " Test Day: " + testDay.start.toUTCString() + " till " +
+                      testDay.end.toUTCString();
     }
 
     // if today is a Test Day
-    if (testDay) {
+    if (testDay.active) {
       intro = "This";
     // else if a future Test Day is scheduled
-    } else if (startTime > Date.now()) {
+    } else if (testDay.start > Date.now()) {
       intro = "Next";
     }
 
@@ -180,6 +193,8 @@ client.addListener('message', function(from, to, message) {
       if (from in metrics.activeUsers) {
         delete metrics.activeUsers[from];
       }
+
+      saveData("optOut", JSON.stringify(optOut));
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
                "for your nick " + from + ".");
@@ -189,15 +204,17 @@ client.addListener('message', function(from, to, message) {
     if (optOut.indexOf(from) >= 0) {
       optOut.splice(optOut.indexOf(from), 1);
       // on Test Days, add to metrics to avoid second(?) opt out notice
-      if (testDay) {
+      if (testDay.active) {
         metrics.activeUsers[from] = 0;
       }
+
+      saveData("optOut", JSON.stringify(optOut));
     }
     client.say(from, "You’re opted in to Test Day data collection " +
                "for your nick " + from + ".");
   }
 
-  if (testDay) {
+  if (testDay.active) {
     if (from === 'firebot') {
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0) {
         metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
@@ -221,6 +238,8 @@ client.addListener('message', function(from, to, message) {
     } else {
       metrics.hourUTC[nowHour] = 1;
     }
+
+    saveData("metrics", JSON.stringify(metrics));
   }
 });
 
@@ -232,7 +251,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
     return;
   }
 
-  if (!((admins.indexOf(from) >= 0) || (helpers.indexOf(from) >= 0))) {
+  if (!((testDay.admins.indexOf(from) >= 0) || (testDay.helpers.indexOf(from) >= 0))) {
     client.say(from, "Sorry! " + from + " is not a Test Day admin or helper.");
     return;
   }
@@ -247,9 +266,9 @@ client.addListener('pm', function(from, message) { // private messages to bot
 
     // :advertise is the only helper command; run it without further check
     if (command[0] === ":advertise") {
-      advertisement.channels.forEach(function (aChannel){
+      testDay.advertisement.channels.forEach(function (aChannel){
         client.join(aChannel, function() {
-          client.say(aChannel, advertisement.message);
+          client.say(aChannel, testDay.advertisement.message);
           client.part(aChannel);
         });
       });
@@ -257,7 +276,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
     }
 
     // other privileged commands are admin-only; return if not from admin
-    if (!(admins.indexOf(from) >= 0)) {
+    if (!(testDay.admins.indexOf(from) >= 0)) {
       return;
     }
 
@@ -272,16 +291,16 @@ client.addListener('pm', function(from, message) { // private messages to bot
         if (cmdLen != 2) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
         } else {
-          admins.push(command[1]);
-          client.say(from, 'Test Day admins are now ' + admins.join(", "));
+          testDay.admins.push(command[1]);
+          client.say(from, 'Test Day admins are now ' + testDay.admins.join(", "));
         }
         break;
       case ":addHelper":
         if (cmdLen != 2) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
         } else {
-          helpers.push(command[1]);
-          client.say(from, 'Test Day helpers are now ' + admins.join(", "));
+          testDay.helpers.push(command[1]);
+          client.say(from, 'Test Day helpers are now ' + testDay.helpers.join(", "));
         }
         break;
       case ":stats":
@@ -289,32 +308,38 @@ client.addListener('pm', function(from, message) { // private messages to bot
         stats.generateStats(metrics, from);
         break;
       case ":stop":
-        if (testDay) {
+        if (testDay.active) {
+          testDay.end = new Date();
+          metrics.end = testDay.end.toUTCString();
+
+          saveData("metrics", JSON.stringify(metrics));
+
           updateTestDayData();
+
           client.say(from, "Test Day stopped.");
         } else {
           client.say(from, "No Test Day is in progress.");
         }
         break;
       case ":next":
-        if (testDay) {
-          client.say(from, "Test Day in progress and scheduled to end " + endTime);
+        if (testDay.active) {
+          client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
         } else {
           if (cmdLen >= 5) {
-            startTime = new Date(command[1]);
-            endTime = new Date(command[2]);
-            etherpad = command[3];
-            topic = message.slice(message.indexOf(etherpad) + etherpad.length + 1);
+            testDay.start = new Date(command[1]);
+            testDay.end = new Date(command[2]);
+            testDay.etherpad = command[3];
+            testDay.topic = message.slice(message.indexOf(testDay.etherpad) + testDay.etherpad.length + 1);
             // if the start and end dates appear valid, set the test date
-            if ((endTime > startTime) && (startTime > Date.now())) {
+            if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
-              timerID = setTimeout(updateTestDayData, startTime - Date.now());
-              client.say(from, "Next Test Day's start is " + startTime);
-              client.say(from, "Next Test Day's end is " + endTime);
-              client.say(from, "Next Test Day's etherpad is " + etherpad);
-              client.say(from, "Next Test Day's topic is " + topic);
+              timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
+              client.say(from, "Next Test Day's start is " + testDay.start);
+              client.say(from, "Next Test Day's end is " + testDay.end);
+              client.say(from, "Next Test Day's etherpad is " + testDay.etherpad);
+              client.say(from, "Next Test Day's topic is " + testDay.topic);
             } else {
               client.say(from, "Please use valid dates.");
             }
@@ -326,6 +351,8 @@ client.addListener('pm', function(from, message) { // private messages to bot
       default:
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
+
+    saveData("testDay", JSON.stringify(testDay));
   });
 });
 
@@ -361,3 +388,59 @@ Stats.prototype.generateStats = function(metrcs, from) {
     }
   }
 };
+
+function restoreTestDayData() {
+  var data = readData("optOut");
+  if (data) {
+    optOut = data;
+  }
+
+  data = readData("testDay");
+  if (data) {
+    testDay = data;
+    // Date objects don't survive JSON stringify/parse
+    testDay.start = new Date(testDay.start);
+    testDay.end = new Date(testDay.end);
+  }
+
+  data = readData("metrics");
+  if (data) {
+    metrics = data;
+    // Date objects don't survive JSON stringify/parse
+    metrics.start = new Date(metrics.start);
+    metrics.end = new Date(metrics.end);
+  }
+
+  if (testDay.start > Date.now()) {
+    // if a future Test Day has been scheduled
+    timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
+
+  } else if (testDay.end > Date.now()) {
+    // else if Test Day has not ended
+    updateTestDayData();
+  }
+}
+
+function saveData(datastore, data) {
+  var filename = "./data/" + datastore + ".json";
+
+  if (!fs.existsSync("./data")) {
+    fs.mkdirSync("./data", "0750");
+  }
+
+  fs.writeFile(filename, data, function(err){
+    if (err) {
+      console.error("Error writing " + filename);
+    }
+  });
+}
+
+function readData(datastore) {
+  var filename = "./data/" + datastore + ".json";
+  var data;
+
+  if (fs.existsSync(filename)) {
+    data = fs.readFileSync(filename, 'utf8');
+    return JSON.parse(data);
+  }
+}
