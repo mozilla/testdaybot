@@ -49,8 +49,7 @@ var ircServer = config.server,
     helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
 
-readData("schedule");
-readData("optout");
+readRestartData();
 
 function resetData() {
   admins = config.admins;
@@ -65,11 +64,13 @@ function resetData() {
     etherpad: etherpad,
     topic: topic,
   };
+  saveData("metrics");
 }
 
 function updateTestDayData() {
   if (testDay) {
     testDay = false;
+    saveData("stats");
     client.send('TOPIC', channel, topic_backup);
     if (timerID !== 0) {
       clearTimeout(timerID);
@@ -224,6 +225,7 @@ client.addListener('message', function(from, to, message) {
     } else {
       metrics.hourUTC[nowHour] = 1;
     }
+    saveData("metrics");
   }
 });
 
@@ -293,6 +295,8 @@ client.addListener('pm', function(from, message) { // private messages to bot
         break;
       case ":stop":
         if (testDay) {
+          endTime = Date.now();
+          metrics.end = endTime.toUTCString();
           updateTestDayData();
           client.say(from, "Test Day stopped.");
         } else {
@@ -367,16 +371,20 @@ Stats.prototype.generateStats = function(metrcs, from) {
 };
 
 function saveData(datastore) {
-  var filename,
+  var filename = "./data/" + datastore + ".txt",
       data;
 
   switch (datastore) {
+    case ("stats"):
+      var isodate = (new Date()).toISOString().slice(0,10).replace(/-/g,"");
+      filename = "./stats/" + isodate + ".json";
+    case ("metrics"):
+      data = JSON.stringify(metrics);
+      break;
     case ("optout"):
-      filename = "./data/optout.txt";
       data = optOut.toString();
       break;
     case ("schedule"):
-      filename = "./data/schedule.txt";
       data = startTime + "," + endTime + "," + etherpad + "," + topic;
       break;
     default:
@@ -385,33 +393,32 @@ function saveData(datastore) {
   }
   fs.writeFile(filename, data, function(err){
     if (err) {
-      console.log("Failed to write " + filename);
+      console.log("Error writing " + filename);
     }
   });
 }
 
 function readData(datastore) {
-  var filename,
+  var filename = "./data/" + datastore + ".txt",
   data;
 
-  switch (datastore) {
-    case ("optout"):
-      filename = "./data/optout.txt";
-      break;
-    case ("schedule"):
-      filename = "./data/schedule.txt";
-      break;
-    default:
-      console.log("Unable to read " + datastore);
-      return;
-  }
   fs.readFile(filename, "utf8", function(err, data){
     if (err) {
       console.log("Error reading " + datastore + " datastore; " +
                   "using default values.");
     } else {
       switch (datastore) {
-        case ("optout"):
+        case ("metrics"):
+          if (!(endTime > Date.now())) {
+            console.log("Saved metrics are for completed test day.");
+          } else {
+            metrics = JSON.parse(data);
+            testDay = true;
+            timerID = setTimeout(updateTestDayData, endTime - Date.now());
+            //client.send('TOPIC', channel, topic);
+          }
+          break;
+        case ("optout"): 
           if (data.length === 0) {
             optOut = [];
           } else {
@@ -420,17 +427,21 @@ function readData(datastore) {
           break;
         case ("schedule"):
           schedule = data.split(",");
-          var start = new Date(schedule.shift());
-          // process saved schedule data only for a future test date
-          if (start > Date.now()) {
-            startTime = start;
-            endTime = new Date(schedule.shift());
-            etherpad = schedule.shift();
-            topic = schedule;
-          }
+          startTime = new Date(schedule.shift());
+          endTime = new Date(schedule.shift());
+          etherpad = schedule.shift();
+          topic = schedule;
           break;
         default:
+          console.log("Unable to read " + datastore);
+          return;
       }
     }
   });
+}
+
+function readRestartData () {
+  readData("schedule");
+  readData("metrics");
+  readData("optout");
 }
