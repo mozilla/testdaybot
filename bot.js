@@ -17,8 +17,8 @@ var ircServer = config.server,
     admins = config.admins,
     helpers = config.helpers,
     advertisement = config.advertisement,
-    startTime = Date.now(),
-    endTime = startTime,
+    startTime = new Date(),
+    endTime = new Date(2000),
     timerID = 0,
     topic = "",
     topic_backup = "",
@@ -70,7 +70,6 @@ function resetData() {
 function updateTestDayData() {
   if (testDay) {
     testDay = false;
-    saveData("stats");
     client.send('TOPIC', channel, topic_backup);
     if (timerID !== 0) {
       clearTimeout(timerID);
@@ -88,6 +87,7 @@ client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
   if (!testDay && (aChannel === channel)){
     // save a non-Test Day topic to restore after Test Day
     topic_backup = aChannelTopic;
+    saveData("schedule");
   }
 });
 
@@ -157,7 +157,7 @@ client.addListener('message', function(from, to, message) {
     var scheduleTimes = "";
 
     // bot just started, nothing's happened, nothing's scheduled
-    if (endTime === startTime) {
+    if (startTime > endTime) {
       intro = "No Test Day has been scheduled.";
     } else {
       // default to past Test Day
@@ -184,6 +184,7 @@ client.addListener('message', function(from, to, message) {
       if (from in metrics.activeUsers) {
         delete metrics.activeUsers[from];
       }
+      saveData("optout");
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
                "for your nick " + from + ".");
@@ -196,6 +197,7 @@ client.addListener('message', function(from, to, message) {
       if (testDay) {
         metrics.activeUsers[from] = 0;
       }
+      saveData("optout");
     }
     client.say(from, "You’re opted in to Test Day data collection " +
                "for your nick " + from + ".");
@@ -295,8 +297,9 @@ client.addListener('pm', function(from, message) { // private messages to bot
         break;
       case ":stop":
         if (testDay) {
-          endTime = Date.now();
+          endTime = new Date();
           metrics.end = endTime.toUTCString();
+          saveData("metrics");
           updateTestDayData();
           client.say(from, "Test Day stopped.");
         } else {
@@ -322,7 +325,6 @@ client.addListener('pm', function(from, message) { // private messages to bot
               client.say(from, "Next Test Day's end is " + endTime);
               client.say(from, "Next Test Day's etherpad is " + etherpad);
               client.say(from, "Next Test Day's topic is " + topic);
-              saveData("schedule");
             } else {
               client.say(from, "Please use valid dates.");
             }
@@ -334,6 +336,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
       default:
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
+    saveData("schedule");
   });
 });
 
@@ -375,9 +378,6 @@ function saveData(datastore) {
       data;
 
   switch (datastore) {
-    case ("stats"):
-      var isodate = (new Date()).toISOString().slice(0,10).replace(/-/g,"");
-      filename = "./stats/" + isodate + ".json";
     case ("metrics"):
       data = JSON.stringify(metrics);
       break;
@@ -385,15 +385,25 @@ function saveData(datastore) {
       data = optOut.toString();
       break;
     case ("schedule"):
-      data = startTime + "," + endTime + "," + etherpad + "," + topic;
+      var schedule = {
+        admins: admins,
+        helpers: helpers,
+        startTime: startTime,
+        endTime: endTime,
+        etherpad: etherpad,
+        topic: topic,
+        topic_backup: topic_backup
+      }
+      data = JSON.stringify(schedule);
       break;
     default:
-      console.log("Unable to store " + datastore);
+      console.error("Unable to store " + datastore);
       return;
   }
+
   fs.writeFile(filename, data, function(err){
     if (err) {
-      console.log("Error writing " + filename);
+      console.error("Error writing " + filename);
     }
   });
 }
@@ -404,20 +414,10 @@ function readData(datastore) {
 
   fs.readFile(filename, "utf8", function(err, data){
     if (err) {
-      console.log("Error reading " + datastore + " datastore; " +
+      console.error("Error reading " + datastore + " datastore; " +
                   "using default values.");
     } else {
       switch (datastore) {
-        case ("metrics"):
-          if (!(endTime > Date.now())) {
-            console.log("Saved metrics are for completed test day.");
-          } else {
-            metrics = JSON.parse(data);
-            testDay = true;
-            timerID = setTimeout(updateTestDayData, endTime - Date.now());
-            //client.send('TOPIC', channel, topic);
-          }
-          break;
         case ("optout"): 
           if (data.length === 0) {
             optOut = [];
@@ -426,14 +426,30 @@ function readData(datastore) {
           }
           break;
         case ("schedule"):
-          schedule = data.split(",");
-          startTime = new Date(schedule.shift());
-          endTime = new Date(schedule.shift());
-          etherpad = schedule.shift();
-          topic = schedule;
+          schedule = JSON.parse(data);
+          admins = schedule.admins;
+          helpers = schedule.helpers;
+          startTime = new Date(schedule.startTime);
+          endTime = new Date(schedule.endTime);
+          etherpad = schedule.etherpad;
+          topic = schedule.topic;
+          topic_backup = schedule.topic_backup;
+
+          // if there's a scheduled Test Day
+          if (startTime > Date.now()) {
+            timerID = setTimeout(updateTestDayData, startTime - Date.now());
+          // or if the bot shut down during a Test Day
+          } else if ((startTime < Date.now()) && (Date.now() < endTime)) {
+            testDay = true;
+            timerID = setTimeout(updateTestDayData, endTime - Date.now());
+            client.send('TOPIC', channel, topic);
+          }
+          break;
+        case ("metrics"):
+          metrics = JSON.parse(data);
           break;
         default:
-          console.log("Unable to read " + datastore);
+          console.error("Unable to read " + datastore);
           return;
       }
     }
@@ -441,7 +457,7 @@ function readData(datastore) {
 }
 
 function readRestartData () {
+  readData("optout");
   readData("schedule");
   readData("metrics");
-  readData("optout");
 }
