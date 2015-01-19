@@ -30,6 +30,8 @@ var ircServer = config.server,
       activeUsers: {},
       hourUTC: {},
       optOutTotal: 0,
+      start: new Date(2000),
+      end: new Date(2000)
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -59,8 +61,8 @@ function resetData() {
     activeUsers: {},
     hourUTC: {},
     optOutTotal: 0,
-    start: testDay.start.toUTCString(),
-    end: testDay.end.toUTCString(),
+    start: new Date(testDay.start),
+    end: new Date(testDay.end),
     etherpad: testDay.etherpad,
     topic: testDay.topic,
   };
@@ -80,7 +82,7 @@ function updateTestDayData() {
     client.send('TOPIC', testDay.channel, testDay.topic);
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
-    if ((!metrics.start) || (testDay.start > metrics.start)) {
+    if (testDay.start > metrics.start) {
       resetData();
     }
   }
@@ -395,6 +397,9 @@ function restoreTestDayData() {
   data = readData("metrics");
   if (data) {
     metrics = data;
+    // Date objects don't survive JSON stringify/parse
+    metrics.start = new Date(metrics.start);
+    metrics.end = new Date(metrics.end);
   }
 
   if (testDay.start > Date.now()) {
