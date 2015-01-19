@@ -21,12 +21,12 @@ var ircServer = config.server,
       etherpad: "",
       topic: "",
       topic_backup: "",
-      advertisement: config.advertisement,
-    }
+      advertisement: config.advertisement
+    },
     timerID = 0,
     optOut = [],
     metrics = {
-      firebotBugs:[],
+      firebotBugs: [],
       activeUsers: {},
       hourUTC: {},
       optOutTotal: 0,
@@ -64,7 +64,7 @@ function resetData() {
     start: new Date(testDay.start),
     end: new Date(testDay.end),
     etherpad: testDay.etherpad,
-    topic: testDay.topic,
+    topic: testDay.topic
   };
 
   saveData("metrics", JSON.stringify(metrics));
@@ -94,7 +94,7 @@ function updateTestDayData() {
 restoreTestDayData();
 
 client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
-  if (!testDay.active && (aChannel === testDay.channel)){
+  if (!testDay.active && (aChannel === testDay.channel)) {
     // save a non-Test Day topic to restore after Test Day
     testDay.topic_backup = aChannelTopic;
   }
