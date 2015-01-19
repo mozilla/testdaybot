@@ -12,7 +12,7 @@ var ircServer = config.server,
     },
     client = new irc.Client(ircServer, nick, options),
     testDay = {
-      inProgress: false,
+      active: false,
       channel: config.channels[0],
       admins: config.admins,
       helpers: config.helpers,
@@ -66,19 +66,20 @@ function resetData() {
     etherpad: testDay.etherpad,
     topic: testDay.topic,
   };
+
   saveData("metrics", JSON.stringify(metrics));
 }
 
 function updateTestDayData() {
   if (testDay.end < Date.now()) {
-    testDay.inProgress = false;
+    testDay.active = false;
     client.send('TOPIC', testDay.channel, testDay.topic_backup);
     if (timerID !== 0) {
       clearTimeout(timerID);
       timerID = 0;
     }
   } else {
-    testDay.inProgress = true;
+    testDay.active = true;
     client.send('TOPIC', testDay.channel, testDay.topic);
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
@@ -86,13 +87,14 @@ function updateTestDayData() {
       resetData();
     }
   }
+
   saveData("testDay", JSON.stringify(testDay));
 }
 
 restoreTestDayData();
 
 client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
-  if (!testDay.inProgress && (aChannel === testDay.channel)){
+  if (!testDay.active && (aChannel === testDay.channel)){
     // save a non-Test Day topic to restore after Test Day
     testDay.topic_backup = aChannelTopic;
   }
@@ -133,7 +135,7 @@ client.addListener('message', function(from, to, message) {
   }
   if (message.search('[!:]etherpad') >= 0) {
     if (testDay.etherpad) {
-      if (testDay.inProgress) {
+      if (testDay.active) {
         client.say(to, "Today's etherpad is " + testDay.etherpad);
       } else {
         client.say(to, "Next Test Day's etherpad is " + testDay.etherpad);
@@ -144,7 +146,7 @@ client.addListener('message', function(from, to, message) {
   }
   if (message.search('[!:]helpers') === 0) {
     var command = message.split(" ");
-    if (testDay.inProgress) {
+    if (testDay.active) {
       intro = "Today's helpers: ";
       switch (command[1]) {
         case 'request':
@@ -174,7 +176,7 @@ client.addListener('message', function(from, to, message) {
     }
 
     // if today is a Test Day
-    if (testDay.inProgress) {
+    if (testDay.active) {
       intro = "This";
     // else if a future Test Day is scheduled
     } else if (testDay.start > Date.now()) {
@@ -191,6 +193,7 @@ client.addListener('message', function(from, to, message) {
       if (from in metrics.activeUsers) {
         delete metrics.activeUsers[from];
       }
+
       saveData("optOut", JSON.stringify(optOut));
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
@@ -201,16 +204,17 @@ client.addListener('message', function(from, to, message) {
     if (optOut.indexOf(from) >= 0) {
       optOut.splice(optOut.indexOf(from), 1);
       // on Test Days, add to metrics to avoid second(?) opt out notice
-      if (testDay.inProgress) {
+      if (testDay.active) {
         metrics.activeUsers[from] = 0;
       }
+
       saveData("optOut", JSON.stringify(optOut));
     }
     client.say(from, "You’re opted in to Test Day data collection " +
                "for your nick " + from + ".");
   }
 
-  if (testDay.inProgress) {
+  if (testDay.active) {
     if (from === 'firebot') {
       if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0) {
         metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
@@ -234,6 +238,7 @@ client.addListener('message', function(from, to, message) {
     } else {
       metrics.hourUTC[nowHour] = 1;
     }
+
     saveData("metrics", JSON.stringify(metrics));
   }
 });
@@ -303,18 +308,21 @@ client.addListener('pm', function(from, message) { // private messages to bot
         stats.generateStats(metrics, from);
         break;
       case ":stop":
-        if (testDay.inProgress) {
+        if (testDay.active) {
           testDay.end = new Date();
           metrics.end = testDay.end.toUTCString();
+
           saveData("metrics", JSON.stringify(metrics));
+
           updateTestDayData();
+
           client.say(from, "Test Day stopped.");
         } else {
           client.say(from, "No Test Day is in progress.");
         }
         break;
       case ":next":
-        if (testDay.inProgress) {
+        if (testDay.active) {
           client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
         } else {
           if (cmdLen >= 5) {
@@ -343,6 +351,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
       default:
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
+
     saveData("testDay", JSON.stringify(testDay));
   });
 });
@@ -414,6 +423,10 @@ function restoreTestDayData() {
 
 function saveData(datastore, data) {
   var filename = "./data/" + datastore + ".json";
+
+  if (!fs.existsSync("./data")) {
+    fs.mkdirSync("./data", "0750");
+  }
 
   fs.writeFile(filename, data, function(err){
     if (err) {
