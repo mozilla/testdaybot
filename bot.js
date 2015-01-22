@@ -340,8 +340,8 @@ client.addListener('pm', function(from, message) { // private messages to bot
                 clearTimeout(timerID);
               }
               timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
-              client.say(from, "Next Test Day's start is " + testDay.start);
-              client.say(from, "Next Test Day's end is " + testDay.end);
+              client.say(from, "Next Test Day's start is " + testDay.start.toUTCString());
+              client.say(from, "Next Test Day's end is " + testDay.end.toUTCString());
               client.say(from, "Next Test Day's etherpad is " + testDay.etherpad);
               client.say(from, "Next Test Day's topic is " + testDay.topic);
             } else {
