@@ -329,7 +329,11 @@ client.addListener('pm', function(from, message) { // private messages to bot
             testDay.start = new Date(command[1]);
             testDay.end = new Date(command[2]);
             testDay.etherpad = command[3];
-            testDay.topic = message.slice(message.indexOf(testDay.etherpad) + testDay.etherpad.length + 1);
+            testDay.topic = "Welcome to the Mozilla Quality Assurance channel. " +
+                            "Today we’re testing " +
+                            command.slice(4, cmdLen).join(" ") + ". " +
+                            "Please read " + testDay.etherpad + " for more " +
+                            "information and ask questions in this channel.";
             // if the start and end dates appear valid, set the test date
             if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
               if (timerID !== 0) {
