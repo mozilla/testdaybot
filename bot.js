@@ -8,6 +8,9 @@ var ircServer = config.server,
     options = {
       channels: config.channels,
       autoRejoin: config.autoRejoin,
+      port: config.port,
+      secure: config.secure,
+      autoConnect: false,
       floodProtection: false
     },
     client = new irc.Client(ircServer, nick, options),
@@ -81,19 +84,23 @@ function updateTestDayData() {
     }
   } else {
     testDay.active = true;
-    client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
-                "Today we are testing " + testDay.topic + ". " +
-                "Please read " + testDay.etherpad + " for more information " +
-                "and ask any questions you have in this channel.");
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
     if (testDay.start > metrics.start) {
       resetData();
+      client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
+                  "Today we are testing " + testDay.topic + ". " +
+                  "Please read " + testDay.etherpad + " for more information " +
+                  "and ask any questions you have in this channel.");
     }
   }
 
   saveData("testDay", JSON.stringify(testDay));
 }
+
+client.connect(function () {
+  client.say("NickServ", "IDENTIFY " + config.password);
+});
 
 restoreTestDayData();
 
