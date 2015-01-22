@@ -136,10 +136,11 @@ client.addListener('message', function(from, to, message) {
   }
 
   if (message.search('[!:]join') >= 0) {
-    client.say(from, "Mozilla QA is a diverse, open community of people pushing " +
-                   "the open web forward by ensuring Mozilla produces the " +
-                   "best technology possible. See https://wiki.mozilla.org/QA " +
-                   "to find out more about getting involved.");
+    client.say(from, "Mozilla QA is a diverse, open community of people " +
+               "pushing the open web forward by ensuring Mozilla produces " +
+               "the best technology possible. See " +
+               "https://wiki.mozilla.org/QA " +
+               "to find out more about getting involved.");
   }
 
   if (message.search('[!:]etherpad') >= 0) {
