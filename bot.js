@@ -37,6 +37,7 @@ var ircServer = config.server,
              ":bug"  : "Learn how to report a bug",
              ":qmo"  : "Learn about Quality at Mozilla",
              ":sumo" : "Learn about Support at Mozilla",
+             ":join" : "Learn about getting involved with Mozilla QA",
              ":etherpad" : "View the Test Day etherpad",
              ":helpers" : "View Test Day helpers, and request help with :helpers request",
              ":schedule" : "View the Test Day schedule",
@@ -133,6 +134,14 @@ client.addListener('message', function(from, to, message) {
   if (message.search('[!:]qmo') >= 0) {
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
+
+  if (message.search('[!:]join') >= 0) {
+    client.say(from, "Mozilla QA is a diverse, open community of people pushing " +
+                   "the open web forward by ensuring Mozilla produces the " +
+                   "best technology possible. See https://wiki.mozilla.org/QA " +
+                   "to find out more about getting involved.");
+  }
+
   if (message.search('[!:]etherpad') >= 0) {
     if (testDay.etherpad) {
       if (testDay.active) {
