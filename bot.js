@@ -84,14 +84,14 @@ function updateTestDayData() {
     }
   } else {
     testDay.active = true;
-    client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
-                "Today we are testing " + testDay.topic + ". " +
-                "Please read " + testDay.etherpad + " for more information " +
-                "and ask any questions you have in this channel.");
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
     if (testDay.start > metrics.start) {
       resetData();
+      client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
+                  "Today we are testing " + testDay.topic + ". " +
+                  "Please read " + testDay.etherpad + " for more information " +
+                  "and ask any questions you have in this channel.");
     }
   }
 
@@ -100,10 +100,9 @@ function updateTestDayData() {
 
 client.connect(function () {
   client.say("NickServ", "IDENTIFY " + config.password);
-  setTimeout(function(){
-      restoreTestDayData();
-  },2000);
 });
+
+restoreTestDayData();
 
 client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
   if (!testDay.active && (aChannel === testDay.channel)) {
