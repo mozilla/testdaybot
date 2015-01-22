@@ -81,7 +81,10 @@ function updateTestDayData() {
     }
   } else {
     testDay.active = true;
-    client.send('TOPIC', testDay.channel, testDay.topic);
+    client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
+                "Today we are testing " + testDay.topic + ". " +
+                "Please read " + testDay.etherpad + " for more information " +
+                "and ask any questions you have in this channel.");
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
     if (testDay.start > metrics.start) {
@@ -339,7 +342,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
             testDay.start = new Date(command[1]);
             testDay.end = new Date(command[2]);
             testDay.etherpad = command[3];
-            testDay.topic = message.slice(message.indexOf(testDay.etherpad) + testDay.etherpad.length + 1);
+            testDay.topic = command.slice(4, cmdLen).join(" ");
             // if the start and end dates appear valid, set the test date
             if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
               if (timerID !== 0) {
