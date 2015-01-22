@@ -8,6 +8,9 @@ var ircServer = config.server,
     options = {
       channels: config.channels,
       autoRejoin: config.autoRejoin,
+      port: config.port,
+      secure: config.secure,
+      autoConnect: false,
       floodProtection: false
     },
     client = new irc.Client(ircServer, nick, options),
@@ -94,6 +97,10 @@ function updateTestDayData() {
 
   saveData("testDay", JSON.stringify(testDay));
 }
+
+client.connect(function () {
+  client.say("NickServ", "IDENTIFY " + config.password);
+});
 
 restoreTestDayData();
 

@@ -5,6 +5,7 @@
     "server":"irc.mozilla.org",
     "port":"6697",
     "nick":"_TestDayBot",
+    "password":"password",
     "secure":"true",
     "autoRejoin":"true",
     "admins":[
