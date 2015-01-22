@@ -80,10 +80,10 @@ function updateTestDayData() {
     }
   } else {
     testDay.active = true;
-    client.send('TOPIC', testDay.channel, "Welcome to the Mozilla QA " +
-                "channel. Today we’re testing " + testDay.topic + ". " +
+    client.send('TOPIC', testDay.channel, "Welcome to the QA channel. " +
+                "Today we are testing " + testDay.topic + ". " +
                 "Please read " + testDay.etherpad + " for more information " +
-                "and ask questions in this channel.");
+                "and ask any questions you have in this channel.");
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
     if (testDay.start > metrics.start) {
