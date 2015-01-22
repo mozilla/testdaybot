@@ -100,9 +100,8 @@ function updateTestDayData() {
 
 client.connect(function () {
   client.say("NickServ", "IDENTIFY " + config.password);
+  restoreTestDayData();
 });
-
-restoreTestDayData();
 
 client.addListener('topic', function (aChannel, aChannelTopic, aNick) {
   if (!testDay.active && (aChannel === testDay.channel)) {
