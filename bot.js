@@ -49,7 +49,9 @@ var ircServer = config.server,
     },
     adminhelp = { ":adminhelp" : "This is Admin Help! :)",
                   ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
+                  ":rmAdmin" : ":rmAdmin <nickname> remove from Test Day admins",
                   ":addHelper" : ":addHelper <nickname> as a Test Day helper",
+                  ":rmHelper" : ":rmHelper <nickname> remove from Test Day helpers",
                   ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
                   ":stats" : ":stats display Test Day stats",
                   ":stop" : ":stop Test Day early"
@@ -145,25 +147,27 @@ client.addListener('message', function(from, to, message) {
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
   }
 
-  if (message.search('[!:]join') >= 0) {
-    client.say(from, "Mozilla QA is a diverse, open community of people " +
-               "pushing the open web forward by ensuring Mozilla produces " +
-               "the best technology possible. See " +
-               "https://wiki.mozilla.org/QA " +
-               "to find out more about getting involved.");
+  if (message.search('[!:]etherpad') >= 0) {
+
+    // bot just started, nothing's happened, nothing's scheduled
+    if (testDay.start > testDay.end) {
+      intro = "No Test Day has been scheduled.";
+    } else {
+      // default to past Test Day
+      intro = "No Test Day is currently scheduled. Last Test Day’s etherpad: ";
+    }
+
+    // if today is a Test Day
+    if (testDay.active) {
+      intro = "Today’s etherpad is ";
+    // else if a future Test Day is scheduled
+    } else if (testDay.start > Date.now()) {
+      intro = "Next Test Day’s etherpad is ";
+    }
+
+    client.say(to, intro + testDay.etherpad);
   }
 
-  if (message.search('[!:]etherpad') >= 0) {
-    if (testDay.etherpad) {
-      if (testDay.active) {
-        client.say(to, "Today's etherpad is " + testDay.etherpad);
-      } else {
-        client.say(to, "Next Test Day's etherpad is " + testDay.etherpad);
-      }
-    } else {
-      client.say(to, "No etherpad is set.");
-    }
-  }
   if (message.search('[!:]helpers') === 0) {
     var command = message.split(" ");
     if (testDay.active) {
@@ -218,6 +222,7 @@ client.addListener('message', function(from, to, message) {
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
                "for your nick " + from + ".");
+    client.say(from, "You can opt in again using the command :optin.");
   }
 
   if (message.search('[!:]optin') === 0) {
@@ -286,10 +291,12 @@ client.addListener('pm', function(from, message) { // private messages to bot
 
     // :advertise is the only helper command; run it without further check
     if (command[0] === ":advertise") {
+      client.say(from, 'Sending "' + testDay.advertisement.message + '" to ...');
       testDay.advertisement.channels.forEach(function (aChannel){
         client.join(aChannel, function() {
           client.say(aChannel, testDay.advertisement.message);
           client.part(aChannel);
+          client.say(from, "  " + aChannel);
         });
       });
       return;
@@ -311,7 +318,9 @@ client.addListener('pm', function(from, message) { // private messages to bot
         if (cmdLen != 2) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
         } else {
-          testDay.admins.push(command[1]);
+          if (!(testDay.admins.indexOf(command[1]) >= 0)) {
+            testDay.admins.push(command[1]);
+          }
           client.say(from, 'Test Day admins are now ' + testDay.admins.join(", "));
         }
         break;
@@ -319,9 +328,33 @@ client.addListener('pm', function(from, message) { // private messages to bot
         if (cmdLen != 2) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
         } else {
-          testDay.helpers.push(command[1]);
+          if (!(testDay.helpers.indexOf(command[1]) >= 0)) {
+            testDay.helpers.push(command[1]);
+          }
           client.say(from, 'Test Day helpers are now ' + testDay.helpers.join(", "));
         }
+        break;
+      case ":rmAdmin":
+        if (cmdLen != 2) {
+          client.say(from, "Need some help? " + adminhelp[command[0]]);
+        } else {
+          var index = testDay.admins.indexOf(command[1]);
+          if (index >= 0) {
+            testDay.admins.splice(index, 1);
+          }
+          client.say(from, 'Test Day admins are now ' + testDay.admins.join(", "));
+        }
+        break;
+      case ":rmHelper":
+        if (cmdLen != 2) {
+          client.say(from, "Need some help? " + adminhelp[command[0]]);
+        } else {
+          var index = testDay.helpers.indexOf(command[1]);
+          if (index >= 0) {
+            testDay.helpers.splice(index, 1);
+          }
+          client.say(from, 'Test Day helpers are now ' + testDay.helpers.join(", "));
+          }
         break;
       case ":stats":
         var stats = new Stats();
