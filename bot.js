@@ -80,7 +80,10 @@ function updateTestDayData() {
     }
   } else {
     testDay.active = true;
-    client.send('TOPIC', testDay.channel, testDay.topic);
+    client.send('TOPIC', testDay.channel, "Welcome to the Mozilla QA " +
+                "channel. Today we’re testing " + testDay.topic + ". " +
+                "Please read " + testDay.etherpad + " for more information " +
+                "and ask questions in this channel.");
     timerID = setTimeout(updateTestDayData, testDay.end - Date.now());
     // if starting a new test day, not restarting
     if (testDay.start > metrics.start) {
@@ -329,19 +332,15 @@ client.addListener('pm', function(from, message) { // private messages to bot
             testDay.start = new Date(command[1]);
             testDay.end = new Date(command[2]);
             testDay.etherpad = command[3];
-            testDay.topic = "Welcome to the Mozilla Quality Assurance channel. " +
-                            "Today we’re testing " +
-                            command.slice(4, cmdLen).join(" ") + ". " +
-                            "Please read " + testDay.etherpad + " for more " +
-                            "information and ask questions in this channel.";
+            testDay.topic = command.slice(4, cmdLen).join(" ");
             // if the start and end dates appear valid, set the test date
             if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
               timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
-              client.say(from, "Next Test Day's start is " + testDay.start.toUTCString());
-              client.say(from, "Next Test Day's end is " + testDay.end.toUTCString());
+              client.say(from, "Next Test Day's start is " + testDay.start);
+              client.say(from, "Next Test Day's end is " + testDay.end);
               client.say(from, "Next Test Day's etherpad is " + testDay.etherpad);
               client.say(from, "Next Test Day's topic is " + testDay.topic);
             } else {
