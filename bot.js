@@ -47,14 +47,12 @@ var ircServer = config.server,
              ":optout"   : "Opt out from Test Day data collection for your nick",
              ":optin"    : "Opt in (default) to Test Day data collection for your nick"
     },
-    adminhelp = { ":adminhelp" : "This is Admin Help! :)",
-                  ":addAdmin" : ":addAdmin <nickname> as a Test Day admin",
-                  ":rmAdmin" : ":rmAdmin <nickname> remove from Test Day admins",
-                  ":addHelper" : ":addHelper <nickname> as a Test Day helper",
-                  ":rmHelper" : ":rmHelper <nickname> remove from Test Day helpers",
-                  ":next" : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic> as next Test Day",
-                  ":stats" : ":stats display Test Day stats",
-                  ":stop" : ":stop Test Day early"
+    adminhelp = { ":adminhelp" : ":adminhelp: This is Admin Help! :)",
+                  ":admin" : ":admin <add|remove> <nickname>: add or remove as a Test Day admin",
+                  ":helper": ":helper <add|remove> <nickname>: add or remove as a Test Day helper",
+                  ":next"  : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic>: set next Test Day",
+                  ":stats" : ":stats: display Test Day stats",
+                  ":stop"  : ":stop: stop Test Day early"
     },
     helperhelp = { ":advertise" : "Advertise the Test Day in other appropriate channels."
     };
@@ -132,7 +130,7 @@ client.addListener('message', function(from, to, message) {
 
     if (testDay.admins.indexOf(from) >= 0) {
       for (item in adminhelp) {
-        client.say(from, item + " : " + adminhelp[item]);
+        client.say(from, adminhelp[item]);
       }
     }
   }
@@ -145,6 +143,14 @@ client.addListener('message', function(from, to, message) {
   }
   if (message.search('[!:]qmo') >= 0) {
     client.say(to, "QMO is short for http://quality.mozilla.org, the official destination for everything related with Mozilla QA");
+  }
+
+  if (message.search('[!:]join') >= 0) {
+    client.say(from, "Mozilla QA is a diverse, open community of people " +
+               "pushing the open web forward by ensuring Mozilla produces " +
+               "the best technology possible. See " +
+               "https://wiki.mozilla.org/QA " +
+               "to find out more about getting involved.");
   }
 
   if (message.search('[!:]etherpad') >= 0) {
@@ -221,8 +227,8 @@ client.addListener('message', function(from, to, message) {
       saveData("optOut", JSON.stringify(optOut));
     }
     client.say(from, "You’ve opted out of Test Day data collection " +
-               "for your nick " + from + ".");
-    client.say(from, "You can opt in again using the command :optin.");
+               "for your nick " + from + ". You can opt in again using " +
+               "the command :optin.");
   }
 
   if (message.search('[!:]optin') === 0) {
@@ -291,12 +297,12 @@ client.addListener('pm', function(from, message) { // private messages to bot
 
     // :advertise is the only helper command; run it without further check
     if (command[0] === ":advertise") {
-      client.say(from, 'Sending "' + testDay.advertisement.message + '" to ...');
+      client.say(from, 'Sending "' + testDay.advertisement.message +
+                 '" to ' + testDay.advertisement.channels.join(", "));
       testDay.advertisement.channels.forEach(function (aChannel){
         client.join(aChannel, function() {
           client.say(aChannel, testDay.advertisement.message);
           client.part(aChannel);
-          client.say(from, "  " + aChannel);
         });
       });
       return;
@@ -314,52 +320,58 @@ client.addListener('pm', function(from, message) { // private messages to bot
           client.say(from, adminhelp[item]);
         }
         break;
-      case ":addAdmin":
-        if (cmdLen != 2) {
+
+      case ":admin":
+        if (cmdLen != 3) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
-        } else {
-          if (!(testDay.admins.indexOf(command[1]) >= 0)) {
-            testDay.admins.push(command[1]);
-          }
-          client.say(from, 'Test Day admins are now ' + testDay.admins.join(", "));
+          return;
         }
-        break;
-      case ":addHelper":
-        if (cmdLen != 2) {
-          client.say(from, "Need some help? " + adminhelp[command[0]]);
-        } else {
-          if (!(testDay.helpers.indexOf(command[1]) >= 0)) {
-            testDay.helpers.push(command[1]);
-          }
-          client.say(from, 'Test Day helpers are now ' + testDay.helpers.join(", "));
+        switch (command[1]) {
+          case "add":
+            if (testDay.admins.indexOf(command[2]) === -1) {
+              testDay.admins.push(command[2]);
+            }
+            break;
+          case "remove":
+            var index = testDay.admins.indexOf(command[2]);
+            if (index >= 0) {
+              testDay.admins.splice(index, 1);
+            }
+            break;
+          default:
+            client.say(from, "Need some help? " + adminhelp[command[0]]);
         }
+        client.say(from, 'Test Day admins are ' + testDay.admins.join(", "));
         break;
-      case ":rmAdmin":
-        if (cmdLen != 2) {
+
+      case ":helper":
+        if (cmdLen != 3) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
-        } else {
-          var index = testDay.admins.indexOf(command[1]);
-          if (index >= 0) {
-            testDay.admins.splice(index, 1);
-          }
-          client.say(from, 'Test Day admins are now ' + testDay.admins.join(", "));
+          return;
         }
+        switch (command[1]) {
+          case "add":
+            if (testDay.helpers.indexOf(command[2]) === -1) {
+              testDay.helpers.push(command[2]);
+            }
+            break;
+          case "remove":
+            var index = testDay.helpers.indexOf(command[2]);
+            if (index >= 0) {
+              testDay.helpers.splice(index, 1);
+            }
+            break;
+          default:
+            client.say(from, "Need some help? " + adminhelp[command[0]]);
+        }
+        client.say(from, 'Test Day helpers are ' + testDay.helpers.join(", "));
         break;
-      case ":rmHelper":
-        if (cmdLen != 2) {
-          client.say(from, "Need some help? " + adminhelp[command[0]]);
-        } else {
-          var index = testDay.helpers.indexOf(command[1]);
-          if (index >= 0) {
-            testDay.helpers.splice(index, 1);
-          }
-          client.say(from, 'Test Day helpers are now ' + testDay.helpers.join(", "));
-          }
-        break;
+
       case ":stats":
         var stats = new Stats();
         stats.generateStats(metrics, from);
         break;
+
       case ":stop":
         if (testDay.active) {
           testDay.end = new Date();
@@ -374,6 +386,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
           client.say(from, "No Test Day is in progress.");
         }
         break;
+
       case ":next":
         if (testDay.active) {
           client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
@@ -401,6 +414,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
           }
         }
         break;
+
       default:
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
