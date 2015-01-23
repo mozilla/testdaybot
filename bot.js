@@ -29,12 +29,14 @@ var ircServer = config.server,
     timerID = 0,
     optOut = [],
     metrics = {
+      topic: "",
+      etherpad: "",
+      start: new Date(2000),
+      end: new Date(2000),
+      optOutTotal: 0,
       firebotBugs: [],
       activeUsers: {},
-      hourUTC: {},
-      optOutTotal: 0,
-      start: new Date(2000),
-      end: new Date(2000)
+      hourUTC: {}
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -61,14 +63,14 @@ function resetData() {
   testDay.admins = config.admins;
   testDay.helpers = config.helpers;
   metrics = {
-    firebotBugs:[],
-    activeUsers: {},
-    hourUTC: {},
-    optOutTotal: 0,
+    topic: testDay.topic,
+    etherpad: testDay.etherpad,
     start: new Date(testDay.start),
     end: new Date(testDay.end),
-    etherpad: testDay.etherpad,
-    topic: testDay.topic
+    optOutTotal: 0,
+    firebotBugs:[],
+    activeUsers: {},
+    hourUTC: {}
   };
 
   saveData("metrics", JSON.stringify(metrics));
