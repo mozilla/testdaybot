@@ -253,8 +253,8 @@ client.addListener('message', function(from, to, message) {
 
   if (testDay.active) {
     if (from === 'firebot') {
-      if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0) {
-        metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
+      if (message.search(/https:\/\/bugzil.la\/(\d+)/i) >= 0) {
+        metrics.firebotBugs.push(/https:\/\/bugzil.la\/(\d+)/i.exec(message)[1]);
       }
     }
 
