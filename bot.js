@@ -253,8 +253,9 @@ client.addListener('message', function(from, to, message) {
 
   if (testDay.active) {
     if (from === 'firebot') {
-      if (message.search(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i) >= 0) {
-        metrics.firebotBugs.push(/https:\/\/bugzilla.mozilla.org\/show_bug.cgi\?id=(\d+)/i.exec(message)[1]);
+      var matches = /^(https:\/\/bugzil.la\/|Bug )(\d+)/i.exec(message);
+      if (matches) {
+        metrics.firebotBugs.push(matches[2]);
       }
     }
 
