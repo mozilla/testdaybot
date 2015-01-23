@@ -78,6 +78,8 @@ function updateTestDayData() {
   if (testDay.end < Date.now()) {
     testDay.active = false;
     client.send('TOPIC', testDay.channel, testDay.topic_backup);
+    client.say(testDay.channel, "The " + testDay.topic + " testday " +
+               "has ended. Thank you all for your participation!");
     if (timerID !== 0) {
       clearTimeout(timerID);
       timerID = 0;
@@ -92,6 +94,8 @@ function updateTestDayData() {
                   "Today we are testing " + testDay.topic + ". " +
                   "Please read " + testDay.etherpad + " for more information " +
                   "and ask any questions you have in this channel.");
+      client.say(testDay.channel, "The " + testDay.topic + " testday starts "+
+                  "now. For details, see " + testDay.etherpad);
     }
   }
 
