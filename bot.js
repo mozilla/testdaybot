@@ -124,7 +124,6 @@ client.addListener('message', function(from, to, message) {
     to = from;
   }
   if (message.search('[!:]help\\b') >= 0) {
-
     client.say(to, "Hello, " + from + "! I’ve sent you a private message " +
                "with more help.");
 
