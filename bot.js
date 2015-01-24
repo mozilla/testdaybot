@@ -447,12 +447,12 @@ Stats.prototype.generateStats = function(metrcs, from) {
       if (keys[i] == "activeUsers") {
         var speakers = Object.keys(metrcs.activeUsers);
         var speakersTotal = speakers.length;
-        report = report + "\nThe following " + speakersTotal + " people were active in the channel: \n";
+        report = report + "\nThe following " + speakersTotal + " people were active in the channel:  ";
         for (var t = 0; t < speakersTotal; t++) {
           report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + "  *  ";
         }
       } else if (keys[i] == "hourUTC") {
-        report = report + "\nThe following hours (UTC) were active in the channel: \n";
+        report = report + "\nThe following hours (UTC) were active in the channel:  ";
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++) {
           report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + "  *  ";
