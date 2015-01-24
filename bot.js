@@ -33,10 +33,10 @@ var ircServer = config.server,
       etherpad: "",
       start: new Date(2000),
       end: new Date(2000),
-      optOutTotal: 0,
-      firebotBugs: [],
       activeUsers: {},
-      hourUTC: {}
+      hourUTC: {},
+      firebotBugs: [],
+      optOutTotal: 0
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -67,10 +67,10 @@ function resetData() {
     etherpad: testDay.etherpad,
     start: new Date(testDay.start),
     end: new Date(testDay.end),
-    optOutTotal: 0,
-    firebotBugs:[],
     activeUsers: {},
-    hourUTC: {}
+    hourUTC: {},
+    firebotBugs:[],
+    optOutTotal: 0
   };
 
   saveData("metrics", JSON.stringify(metrics));
@@ -438,28 +438,35 @@ var Stats = function() {};
 Stats.prototype.generateStats = function(metrcs, from) {
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
+  var report ="";
+  var t = 0;
+
   for (var i = 0; i < keys.length; i++) {
     if (what.call(metrcs[keys[i]]).search('Array') > 0) {
-      client.say(from, keys[i] + ":  " + metrcs[keys[i]].join(", "));
+      report = report + keys[i] + ":  " + metrcs[keys[i]].join(", ") + "\n";
     } else {
       if (keys[i] == "activeUsers") {
         var speakers = Object.keys(metrcs.activeUsers);
         var speakersTotal = speakers.length;
-        client.say(from, "The following " + speakersTotal + " people were active in the channel: ");
-        for (var t = 0; t < speakersTotal; t++) {
-          client.say(from, speakers[t] + ": " + metrcs.activeUsers[speakers[t]]);
+        report = report + "The following " + speakersTotal + " people were active in the channel:  ";
+        for (t = 0; t < speakersTotal; t++) {
+          var sep = (t === speakersTotal - 1) ? "\n" : ", ";
+          report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + sep;
         }
       } else if (keys[i] == "hourUTC") {
-        client.say(from, "The following hours (UTC) were active in the channel: ");
-        var speakers = Object.keys(metrcs.hourUTC);
-        for (var t = 0; t < speakers.length; t++) {
-          client.say(from, speakers[t] + ": " + metrcs.hourUTC[speakers[t]]);
+        report = report + "The following hours (UTC) were active in the channel:  ";
+        speakers = Object.keys(metrcs.hourUTC);
+        speakersTotal = speakers.length;
+        for (t = 0; t < speakersTotal; t++) {
+          sep = (t === speakersTotal - 1) ? "\n" : ", ";
+          report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + sep;
         }
       } else {
-        client.say(from, keys[i] + ": " + metrcs[keys[i]]);
+        report = report + keys[i] + ": " + metrcs[keys[i]] + "\n";
       }
     }
   }
+  client.say(from, report);
 };
 
 function restoreTestDayData() {
