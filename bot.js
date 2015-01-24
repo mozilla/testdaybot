@@ -438,28 +438,31 @@ var Stats = function() {};
 Stats.prototype.generateStats = function(metrcs, from) {
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
+  var report ="";
+
   for (var i = 0; i < keys.length; i++) {
     if (what.call(metrcs[keys[i]]).search('Array') > 0) {
-      client.say(from, keys[i] + ":  " + metrcs[keys[i]].join(", "));
+      report = report + "\n" + keys[i] + ":  " + metrcs[keys[i]].join(", ");
     } else {
       if (keys[i] == "activeUsers") {
         var speakers = Object.keys(metrcs.activeUsers);
         var speakersTotal = speakers.length;
-        client.say(from, "The following " + speakersTotal + " people were active in the channel: ");
+        report = report + "\nThe following " + speakersTotal + " people were active in the channel: \n";
         for (var t = 0; t < speakersTotal; t++) {
-          client.say(from, speakers[t] + ": " + metrcs.activeUsers[speakers[t]]);
+          report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + "  *  ";
         }
       } else if (keys[i] == "hourUTC") {
-        client.say(from, "The following hours (UTC) were active in the channel: ");
+        report = report + "\nThe following hours (UTC) were active in the channel: \n";
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++) {
-          client.say(from, speakers[t] + ": " + metrcs.hourUTC[speakers[t]]);
+          report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + "  *  ";
         }
       } else {
-        client.say(from, keys[i] + ": " + metrcs[keys[i]]);
+        report = report + "\n" + keys[i] + ": " + metrcs[keys[i]];
       }
     }
   }
+  client.say(from, report);
 };
 
 function restoreTestDayData() {
