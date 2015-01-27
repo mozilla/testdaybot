@@ -442,23 +442,25 @@ Stats.prototype.generateStats = function(metrcs, from) {
 
   for (var i = 0; i < keys.length; i++) {
     if (what.call(metrcs[keys[i]]).search('Array') > 0) {
-      report = report + "\n" + keys[i] + ":  " + metrcs[keys[i]].join(", ");
+      report = report + keys[i] + ":  " + metrcs[keys[i]].join(", ") + "\n";
     } else {
       if (keys[i] == "activeUsers") {
         var speakers = Object.keys(metrcs.activeUsers);
         var speakersTotal = speakers.length;
-        report = report + "\nThe following " + speakersTotal + " people were active in the channel:  ";
+        report = report + "The following " + speakersTotal + " people were active in the channel:  ";
         for (var t = 0; t < speakersTotal; t++) {
           report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + "  *  ";
         }
+        report = report + "\n";
       } else if (keys[i] == "hourUTC") {
-        report = report + "\nThe following hours (UTC) were active in the channel:  ";
+        report = report + "The following hours (UTC) were active in the channel:  ";
         var speakers = Object.keys(metrcs.hourUTC);
         for (var t = 0; t < speakers.length; t++) {
           report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + "  *  ";
         }
+        report = report + "\n";
       } else {
-        report = report + "\n" + keys[i] + ": " + metrcs[keys[i]];
+        report = report + keys[i] + ": " + metrcs[keys[i]] + "\n";
       }
     }
   }
