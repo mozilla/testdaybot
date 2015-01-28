@@ -33,10 +33,10 @@ var ircServer = config.server,
       etherpad: "",
       start: new Date(2000),
       end: new Date(2000),
-      optOutTotal: 0,
-      firebotBugs: [],
       activeUsers: {},
-      hourUTC: {}
+      hourUTC: {},
+      firebotBugs: [],
+      optOutTotal: 0
     },
     help = { ":help" : "This is Help! :)",
              ":bug"  : "Learn how to report a bug",
@@ -67,10 +67,10 @@ function resetData() {
     etherpad: testDay.etherpad,
     start: new Date(testDay.start),
     end: new Date(testDay.end),
-    optOutTotal: 0,
-    firebotBugs:[],
     activeUsers: {},
-    hourUTC: {}
+    hourUTC: {},
+    firebotBugs:[],
+    optOutTotal: 0
   };
 
   saveData("metrics", JSON.stringify(metrics));
