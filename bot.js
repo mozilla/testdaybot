@@ -439,6 +439,7 @@ Stats.prototype.generateStats = function(metrcs, from) {
   var keys = Object.keys(metrcs);
   var what = Object.prototype.toString;
   var report ="";
+  var t = 0;
 
   for (var i = 0; i < keys.length; i++) {
     if (what.call(metrcs[keys[i]]).search('Array') > 0) {
@@ -448,22 +449,20 @@ Stats.prototype.generateStats = function(metrcs, from) {
         var speakers = Object.keys(metrcs.activeUsers);
         var speakersTotal = speakers.length;
         report = report + "The following " + speakersTotal + " people were active in the channel:  ";
-        for (var t = 0; t < speakersTotal-1; t++) {
-          report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + ", ";
+        for (t = 0; t < speakersTotal; t++) {
+          var sep = (t === speakersTotal - 1) ? "\n" : ", ";
+          report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + sep;
         }
-        report = report + speakers[t] + ": " + metrcs.activeUsers[speakers[t]] + "\n";
       } else if (keys[i] == "hourUTC") {
         report = report + "The following hours (UTC) were active in the channel:  ";
-        var speakers = Object.keys(metrcs.hourUTC);
-        for (var t = 0; t < speakers.length-1; t++) {
-          report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + ", ";
+        speakers = Object.keys(metrcs.hourUTC);
+        speakersTotal = speakers.length;
+        for (t = 0; t < speakersTotal; t++) {
+          sep = (t === speakersTotal - 1) ? "\n" : ", ";
+          report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + sep;
         }
-        report = report + speakers[t] + ": " + metrcs.hourUTC[speakers[t]] + "\n";
       } else {
-        // report most metrics' string properties only when testday is not active
-        if ((!testDay.active) || (testDay.active && keys[i] === "optOutTotal")) {
-          report = report + keys[i] + ": " + metrcs[keys[i]] + "\n";
-        }
+        report = report + keys[i] + ": " + metrcs[keys[i]] + "\n";
       }
     }
   }
