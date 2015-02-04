@@ -252,7 +252,7 @@ client.addListener('message', function(from, to, message) {
   }
 
   if (testDay.active) {
-    if (from === 'firebot') {
+    if (from === 'firebot' || from === 'whimboo' || from === 'ashughes' || from === 'FlorinMezei') {
       var bug = /^(https:\/\/bugzil.la\/|Bug )(\d+)/i.exec(message);
       if (bug) {
         metrics.firebotBugs.push(bug[2]);
