@@ -131,7 +131,7 @@ client.addListener('message', function(from, to, message) {
       client.say(from, item + " : " + help[item]);
     }
 
-    if (testDay.helpers.indexOf(from) >= 0) {
+    if (testDay.helpers.indexOf(from) >= 0 || testDay.admins.indexOf(from) >= 0) {
       for (item in helperhelp) {
         client.say(from, item + " : " + helperhelp[item]);
       }
