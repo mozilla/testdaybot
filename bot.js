@@ -402,22 +402,32 @@ client.addListener('pm', function(from, message) { // private messages to bot
           client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
         } else {
           if (cmdLen >= 5) {
-            testDay.start = new Date(command[1]);
-            testDay.end = new Date(command[2]);
-            testDay.etherpad = command[3];
-            testDay.topic = command.slice(4, cmdLen).join(" ");
-            // if the start and end dates appear valid, set the test date
-            if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
+            var startTime = new Date(command[1]);
+            var endTime = new Date(command[2]);
+            var dateErrors = [];
+            if (endTime < startTime) {
+              dateErrors.push("Start time is set after end time.");
+            }
+            if (startTime < Date.now()) {
+              dateErrors.push("Start time is set in the past.");
+            }
+            // if the start and end dates appear valid, set the test day date
+            if (dateErrors.length == 0) {
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
+              testDay.start = startTime;
+              testDay.end = endTime;
+              testDay.etherpad = command[3];
+              testDay.topic = command.slice(4, cmdLen).join(" ");
               timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
               client.say(from, "Next Test Day's start is " + testDay.start.toUTCString());
               client.say(from, "Next Test Day's end is " + testDay.end.toUTCString());
               client.say(from, "Next Test Day's etherpad is " + testDay.etherpad);
               client.say(from, "Next Test Day's topic is " + testDay.topic);
-            } else {
-              client.say(from, "Please use valid dates.");
+            }
+            else {
+              client.say(from, "Please use valid dates:\n" + dateErrors.join("\n"));
             }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
