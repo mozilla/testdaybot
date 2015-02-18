@@ -450,7 +450,9 @@ Stats.prototype.generateStats = function(metrcs, from) {
       report = report + keys[i] + ":  " + metrcs[keys[i]].join(", ") + "\n";
     } else {
       if (keys[i] == "activeUsers") {
-        var speakers = Object.keys(metrcs.activeUsers);
+        var speakers = Object.keys(metrcs.activeUsers).sort(function (a, b) {
+          return metrcs.activeUsers[b] - metrcs.activeUsers[a];
+        });
         var speakersTotal = speakers.length;
         report = report + "The following " + speakersTotal + " people were active in the channel:  ";
         for (t = 0; t < speakersTotal; t++) {
