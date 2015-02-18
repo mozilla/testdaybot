@@ -418,6 +418,11 @@ client.addListener('pm', function(from, message) { // private messages to bot
               client.say(from, "Next Test Day's topic is " + testDay.topic);
             } else {
               client.say(from, "Please use valid dates.");
+              if (testDay.end < testDay.start) {
+                client.say(from, "Start time was set after End time.");
+              } else {
+                client.say(from, "Start time is set in the past.");
+              }
             }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
