@@ -402,27 +402,32 @@ client.addListener('pm', function(from, message) { // private messages to bot
           client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
         } else {
           if (cmdLen >= 5) {
-            testDay.start = new Date(command[1]);
-            testDay.end = new Date(command[2]);
-            testDay.etherpad = command[3];
-            testDay.topic = command.slice(4, cmdLen).join(" ");
-            // if the start and end dates appear valid, set the test date
-            if ((testDay.end > testDay.start) && (testDay.start > Date.now())) {
+            var startTime, endTime, dateErrors = [];
+            startTime = new Date(command[1]);
+            endTime = new Date(command[2]);
+            if (endTime < startTime) {
+              dateErrors.push("start time is set after End time");
+            }
+            if (startTime < Date.now()) {
+              dateErrors.push("start time is set in the past");
+            }
+            // if the start and end dates appear valid, set the test day date
+            if (dateErrors.length == 0) {
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
+              testDay.start = new Date(command[1]);
+              testDay.end = new Date(command[2]);
+              testDay.etherpad = command[3];
+              testDay.topic = command.slice(4, cmdLen).join(" ");
               timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
               client.say(from, "Next Test Day's start is " + testDay.start.toUTCString());
               client.say(from, "Next Test Day's end is " + testDay.end.toUTCString());
               client.say(from, "Next Test Day's etherpad is " + testDay.etherpad);
               client.say(from, "Next Test Day's topic is " + testDay.topic);
-            } else {
-              client.say(from, "Please use valid dates.");
-              if (testDay.end < testDay.start) {
-                client.say(from, "Start time was set after End time.");
-              } else {
-                client.say(from, "Start time is set in the past.");
-              }
+            }
+            else {
+              client.say(from, "Please use valid dates: " + dateErrors.join(", ") + ".");
             }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
