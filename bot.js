@@ -416,8 +416,8 @@ client.addListener('pm', function(from, message) { // private messages to bot
               if (timerID !== 0) {
                 clearTimeout(timerID);
               }
-              testDay.start = new Date(command[1]);
-              testDay.end = new Date(command[2]);
+              testDay.start = startTime;
+              testDay.end = endTime;
               testDay.etherpad = command[3];
               testDay.topic = command.slice(4, cmdLen).join(" ");
               timerID = setTimeout(updateTestDayData, testDay.start - Date.now());
