@@ -402,14 +402,14 @@ client.addListener('pm', function(from, message) { // private messages to bot
           client.say(from, "Test Day in progress and scheduled to end " + testDay.end);
         } else {
           if (cmdLen >= 5) {
-            var startTime, endTime, dateErrors = [];
-            startTime = new Date(command[1]);
-            endTime = new Date(command[2]);
+            var startTime = new Date(command[1]);
+            var endTime = new Date(command[2]);
+            var dateErrors = [];
             if (endTime < startTime) {
-              dateErrors.push("start time is set after End time");
+              dateErrors.push("Start time is set after end time.");
             }
             if (startTime < Date.now()) {
-              dateErrors.push("start time is set in the past");
+              dateErrors.push("Start time is set in the past.");
             }
             // if the start and end dates appear valid, set the test day date
             if (dateErrors.length == 0) {
@@ -427,7 +427,7 @@ client.addListener('pm', function(from, message) { // private messages to bot
               client.say(from, "Next Test Day's topic is " + testDay.topic);
             }
             else {
-              client.say(from, "Please use valid dates: " + dateErrors.join(", ") + ".");
+              client.say(from, "Please use valid dates:\n" + dateErrors.join("\n"));
             }
           } else {
             client.say(from, "Need some help? " + adminhelp[command[0]]);
