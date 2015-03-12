@@ -14,4 +14,4 @@ Copy config-example.json to config.json and edit appropriately.
 
 ## How to use
 
-Enter :help in the bot's channel for commands.
+Send :help via a direct message to the bot to receive a list of commands.
