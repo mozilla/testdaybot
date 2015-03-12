@@ -51,7 +51,7 @@ var ircServer = config.server,
     },
     adminhelp = { ":adminhelp" : ":adminhelp: This is Admin Help! :)",
                   ":admin" : ":admin <add|remove> <nickname>: add or remove as a Test Day admin",
-                  ":helper": ":helper <add|remove> <nickname>: add or remove as a Test Day helper",
+                  ":helper": ":helper <add|remove> <nickname1> <nickname2> ... <nicknameN>: add or remove as a Test Day helper",
                   ":next"  : ":next <start as YYYY-MM-DDThh:mmZ> <end as YYYY-MM-DDThh:mmZ> <etherpad> <topic>: set next Test Day",
                   ":stats" : ":stats: display Test Day stats",
                   ":stop"  : ":stop: stop Test Day early"
@@ -355,26 +355,23 @@ client.addListener('pm', function(from, message) { // private messages to bot
         break;
 
       case ":helper":
-        if (cmdLen != 3) {
+        if (cmdLen < 3) {
           client.say(from, "Need some help? " + adminhelp[command[0]]);
           return;
         }
+        var users = command.slice(2, cmdLen);
         switch (command[1]) {
           case "add":
-            if (testDay.helpers.indexOf(command[2]) === -1) {
-              testDay.helpers.push(command[2]);
-            }
+            addToArray(testDay.helpers, users);
             break;
           case "remove":
-            var index = testDay.helpers.indexOf(command[2]);
-            if (index >= 0) {
-              testDay.helpers.splice(index, 1);
-            }
+            removeFromArray(testDay.helpers, users);
             break;
           default:
             client.say(from, "Need some help? " + adminhelp[command[0]]);
         }
         client.say(from, 'Test Day helpers are ' + testDay.helpers.join(", "));
+        delete users;
         break;
 
       case ":stats":
@@ -539,4 +536,21 @@ function readData(datastore) {
     data = fs.readFileSync(filename, 'utf8');
     return JSON.parse(data);
   }
+}
+
+function addToArray(aArray, aElements) {
+  aElements.forEach(function (aElement) {
+    if (aArray.indexOf(aElement) === -1 ) {
+      aArray.push(aElement);
+    }
+  });
+}
+
+function removeFromArray(aArray, aElements) {
+  aElements.forEach(function (aElement) {
+    var index = aArray.indexOf(aElement);
+    if (index >= 0) {
+      aArray.splice(index, 1);
+    }
+  });
 }
