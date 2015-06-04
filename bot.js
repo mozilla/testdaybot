@@ -439,7 +439,11 @@ client.addListener('pm', function(from, message) { // private messages to bot
         client.say(from, "Oops! I don't really know how to " + message + ".");
     }
 
-    saveData("testDay", JSON.stringify(testDay));
+    saveData("testDay", JSON.stringify(testDay), function (error) {
+      var message = "Saving testDay data was unsuccessful. Please repeat the command!";
+      message += "\nThe error was: " + error;
+      client.say(from, message);
+    });
   });
 });
 
@@ -517,7 +521,7 @@ function restoreTestDayData() {
   }
 }
 
-function saveData(datastore, data) {
+function saveData(datastore, data, callback) {
   var filename = "./data/" + datastore + ".json";
 
   if (!fs.existsSync("./data")) {
@@ -527,6 +531,13 @@ function saveData(datastore, data) {
   fs.writeFile(filename, data, function(err){
     if (err) {
       console.error("Error writing " + filename);
+      if (typeof callback == "function") {
+        try {
+          callback(err);
+        } catch (e) {
+          // Nothing to do
+        }
+      }
     }
   });
 }
