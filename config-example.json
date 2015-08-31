@@ -17,14 +17,14 @@
     ],
     "advertisement":{
         "channels":[
-            "#contributors",
             "#developers",
             "#interns",
             "#introduction",
             "#mozillians",
             "#newbies",
             "#seneca"
+
         ],
-        "message":"Mozilla QA is holding a Test Day today. Interested in participating? Please join us in #qa!"
+        "message":"Mozilla QA is holding a Test Day today. Interested in participating? Please join us in #qa !"
     }
 }
