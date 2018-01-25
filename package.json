@@ -1,8 +1,12 @@
 {
-    "name": "testdaybot"
-  , "version": "0.0.2a"
-  , "private": true
-  , "dependencies": {
-      "irc" : "0.3.7"
+    "name": "testdaybot",
+    "version": "0.0.2a",
+    "engines": {
+        "node": "6.11.1"
+    },
+    "private": true,
+    "dependencies": {
+        "envs": ">= 0.1.6",
+        "irc": "0.3.7"
     }
 }

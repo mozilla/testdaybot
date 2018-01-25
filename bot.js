@@ -1,30 +1,37 @@
 // Requires
 var irc = require('irc'),
     fs = require('fs'),
-    config = require("./config");
+    settings = require('./configuration.js'),
+    util = require('util');
 
-var ircServer = config.server,
-    nick = config.nick,
+for (var item in settings) {
+  util.log(item + ': ' + settings[item]);
+}
+
+var ircServer = settings.host,
+    nick = settings.nick,
     options = {
-      channels: config.channels,
-      autoRejoin: config.autoRejoin,
-      port: config.port,
-      secure: config.secure,
+      channels: settings.channels.split(','),
+      autoRejoin: settings.autoRejoin,
+      port: settings.port,
+      secure: settings.secure,
       autoConnect: false,
       floodProtection: false
     },
     client = new irc.Client(ircServer, nick, options),
     testDay = {
       active: false,
-      channel: config.channels[0],
-      admins: config.admins,
-      helpers: config.helpers,
+      channel: settings.channels.split(',')[0],
+      admins: settings.admins.split(','),
+      helpers: settings.helpers.split(','),
       start: new Date(),
       end: new Date(2000),
       etherpad: "",
       topic: "",
       topic_backup: "",
-      advertisement: config.advertisement
+      advertisement: {
+        'channels': settings.adChannels.split(','),
+        'message': settings.adMessage}
     },
     timerID = 0,
     optOut = [],
@@ -60,8 +67,8 @@ var ircServer = config.server,
     };
 
 function resetData() {
-  testDay.admins = config.admins;
-  testDay.helpers = config.helpers;
+  testDay.admins = settings.admins.split(',');
+  testDay.helpers = settings.helpers.split(',');
   metrics = {
     topic: testDay.topic,
     etherpad: testDay.etherpad,
@@ -105,7 +112,7 @@ function updateTestDayData() {
 }
 
 client.connect(function () {
-  client.say("NickServ", "IDENTIFY " + config.password);
+  client.say("NickServ", "IDENTIFY " + settings.password);
 });
 
 restoreTestDayData();
