@@ -1,6 +1,6 @@
 {
     "name": "testdaybot",
-    "version": "0.0.2a",
+    "version": "0.0.3",
     "engines": {
         "node": "6.11.1"
     },
