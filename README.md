@@ -2,16 +2,30 @@
 
 This is an IRC bot that supports Mozilla QA Test Days.
 
-To run this, you will need to have node.js installed.
+## Installation
 
-Copy config-example.json to config.json and edit appropriately.
+Run `npm install` to install the bot and dependencies.
 
-## How to run
+## Configuration
 
-``` bash
-    node bot.js
-```
+Settings are provided via environment variables:
 
-## How to use
+* IRC_HOST - host of IRC server to connect to
+* IRC_PORT - port of IRC server to connect to
+* IRC_NICKNAME - nickname to use on IRC
+* IRC_PASSWORD - NickServ registered password
+* IRC_CHANNELS - comma separated list of IRC channels to join
+* IRC_SECURE - use a secure connection to IRC (default: true)
+* IRC_AUTO_REJOIN - auto rejoin if disconnected from IRC (default: true)
+* ADMINS - comma separated IRC nicks of default admins
+* HELPERS - comma separated IRC nicks of default helpers
+* AD_CHANNELS - comma separated IRC channels to advertise in
+* AD_MESSAGE - message to use when advertising the test day
 
-Send :help via a direct message to the bot to receive a list of commands.
+## Running
+
+Run `node bot.js` to start the bot.
+
+## Usage
+
+Send ':help' via a direct message to the bot to receive a list of commands.
